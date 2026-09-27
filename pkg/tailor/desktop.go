@@ -35,7 +35,10 @@ func validateDesktop(s *Suit) error {
 	default:
 		return fmt.Errorf("invalid init %q: use auto, systemd, sysvinit or openrc", s.Init)
 	}
-	if s.Desktop == "" && s.DisplayManager == "" && s.SessionType == "" {
+	if s.LoginBackground != "" && (!filepath.IsAbs(s.LoginBackground) || strings.ContainsAny(s.LoginBackground, "\r\n\x00")) {
+		return fmt.Errorf("login_background must be an absolute image path on one line")
+	}
+	if s.Desktop == "" && s.DisplayManager == "" && s.SessionType == "" && s.Autologin == nil && s.LoginBackground == "" {
 		return nil
 	}
 	if _, ok := desktopPackages[s.Desktop]; !ok {
@@ -122,6 +125,12 @@ func (ds desktopSystem) check(s *Suit) (desktopPlan, error) {
 	if err != nil {
 		return plan, err
 	}
+	if s.LoginBackground != "" {
+		info, err := os.Stat(filepath.Join(ds.root, "usr/share/xgreeters/lightdm-gtk-greeter.desktop"))
+		if err != nil || !info.Mode().IsRegular() {
+			return plan, fmt.Errorf("login_background requires an installed lightdm-gtk-greeter")
+		}
+	}
 	if err := ds.checkLoginService(plan.init); err != nil {
 		return plan, err
 	}
@@ -145,6 +154,11 @@ func prepareDesktop(s *Suit, dryRun bool) error {
 		utils.LogNormal("[DRY-RUN] Desktop: %s; login: %s; session: %s; init: %s (availability checked during actual wear)", s.Desktop, s.DisplayManager, s.SessionType, defaultInit(s.Init))
 		return nil
 	}
+	if s.Autologin != nil && *s.Autologin {
+		if _, err := desktopAutologinUser(); err != nil {
+			return err
+		}
+	}
 	_, err := hostDesktopSystem().check(s)
 	return err
 }
@@ -154,16 +168,39 @@ func applyDesktop(s *Suit, dryRun bool) error {
 		return nil
 	}
 	if dryRun {
-		utils.LogNormal("[DRY-RUN] Would configure LightDM after sysroot and select it for the next boot; no service restart")
+		utils.LogNormal("[DRY-RUN] Would configure LightDM after sysroot and select graphical boot; no service restart")
+		if s.Autologin != nil {
+			utils.LogNormal("[DRY-RUN] Autologin: %t (target user checked during actual wear)", *s.Autologin)
+		}
+		if s.LoginBackground != "" {
+			utils.LogNormal("[DRY-RUN] Login background: %s", s.LoginBackground)
+		}
 		return nil
 	}
 	return hostDesktopSystem().apply(s)
 }
 
 func (ds desktopSystem) apply(s *Suit) error {
+	if err := validateDesktop(s); err != nil {
+		return err
+	}
 	plan, err := ds.check(s)
 	if err != nil {
 		return err
+	}
+	autologinUser := ""
+	if s.Autologin != nil && *s.Autologin {
+		autologinUser, err = desktopAutologinUser()
+		if err != nil {
+			return err
+		}
+	}
+	// Backgrounds can be supplied by sysroot; validate them after overlays.
+	if s.LoginBackground != "" {
+		info, statErr := os.Stat(filepath.Join(ds.root, s.LoginBackground))
+		if statErr != nil || !info.Mode().IsRegular() {
+			return fmt.Errorf("login background %q is not an installed regular file", s.LoginBackground)
+		}
 	}
 	// lightdm.conf overrides conf.d, so update its default seat in place.
 	path := filepath.Join(ds.root, "etc/lightdm/lightdm.conf")
@@ -172,14 +209,39 @@ func (ds desktopSystem) apply(s *Suit) error {
 		return err
 	}
 	data = setDesktopINI(data, "Seat:*", "user-session", plan.session)
+	if s.Autologin != nil {
+		data = setDesktopINI(data, "Seat:*", "autologin-user", autologinUser)
+		data = setDesktopINI(data, "Seat:*", "autologin-guest", "false")
+		if *s.Autologin {
+			data = setDesktopINI(data, "Seat:*", "autologin-session", plan.session)
+			data = setDesktopINI(data, "Seat:*", "autologin-user-timeout", "0")
+		}
+	}
+	if s.LoginBackground != "" {
+		data = setDesktopINI(data, "Seat:*", "greeter-session", "lightdm-gtk-greeter")
+	}
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
 	if err := os.WriteFile(path, data, 0644); err != nil {
 		return err
 	}
+	if s.LoginBackground != "" {
+		greeterPath := filepath.Join(ds.root, "etc/lightdm/lightdm-gtk-greeter.conf")
+		greeter, err := os.ReadFile(greeterPath)
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		greeter = setDesktopINI(greeter, "greeter", "background", s.LoginBackground)
+		if err := os.WriteFile(greeterPath, greeter, 0644); err != nil {
+			return err
+		}
+	}
 	// Keep Debian's display-manager selector consistent with the systemd alias.
 	if _, err := os.Stat(filepath.Join(ds.root, "etc/debian_version")); err == nil {
+		if err := os.MkdirAll(filepath.Join(ds.root, "etc/X11"), 0755); err != nil {
+			return err
+		}
 		if err := os.WriteFile(filepath.Join(ds.root, "etc/X11/default-display-manager"), []byte("/usr/sbin/lightdm\n"), 0644); err != nil {
 			return err
 		}

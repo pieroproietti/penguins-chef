@@ -71,7 +71,28 @@ func (ds desktopSystem) enableLogin(init string) error {
 	switch init {
 	case "systemd":
 		// Replace the display-manager alias without stopping the active session.
-		return ds.serviceCommand("systemctl", "enable", "--force", "lightdm.service")
+		if err := ds.serviceCommand("systemctl", "enable", "--force", "lightdm.service"); err != nil {
+			return err
+		}
+		output, err := ds.run("systemctl", "list-unit-files", "--no-legend", "slim.service", "gdm3.service", "gdm.service", "sddm.service")
+		if err != nil {
+			return fmt.Errorf("list competing display managers: %w: %s", err, output)
+		}
+		for _, line := range strings.Split(string(output), "\n") {
+			fields := strings.Fields(line)
+			if len(fields) < 2 {
+				continue
+			}
+			switch fields[0] {
+			case "slim.service", "gdm3.service", "gdm.service", "sddm.service":
+				if fields[1] == "enabled" || fields[1] == "enabled-runtime" {
+					if err := ds.serviceCommand("systemctl", "disable", fields[0]); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		return ds.serviceCommand("systemctl", "set-default", "graphical.target")
 	case "sysvinit":
 		if err := ds.serviceCommand("update-rc.d", "lightdm", "defaults"); err != nil {
 			return err

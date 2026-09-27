@@ -163,6 +163,28 @@ Desktop identifiers are `gnome`, `plasma`, `xfce`, `cinnamon`, `mate`, `lxqt`,
 and `budgie`. SDDM, GDM and COSMIC are not yet implemented. Existing costumes without these fields keep their previous behavior.
 Put the fields in the costume itself; nested accessories do not select the login.
 
+Autologin and the LightDM GTK greeter background can also be declared:
+
+```yaml
+autologin: true
+login_background: /usr/share/backgrounds/colibri/3794764350_2839ca0b26_b.jpg
+```
+
+Omitting either option preserves the corresponding existing configuration.
+`autologin: true` uses the non-root invoking account (`SUDO_USER`, then
+`DOAS_USER`, then the current account); direct root invocation is rejected
+instead of guessing an account. `false` clears default-seat user autologin
+and guest autologin. Enabling autologin also selects the declared session and
+a zero timeout. PAM policy and seat-specific overrides still apply.
+
+`login_background` is an absolute path to an installed image, typically
+supplied by the costume's sysroot. Tailor requires the GTK greeter, selects it,
+and updates its `[greeter] background` after overlays. Other greeter options
+are preserved; a user-specific background may still override this default.
+Missing images are reported before writing login configuration.
+The v3 LightDM recipes use these options instead of `config_lightdm.sh`.
+
+
 On Debian-family systems, a minimal recipe without package lists or accessories
 gets the desktop package, `lightdm` and `lightdm-gtk-greeter`. Existing recipes
 with package lists or accessories retain their curated package selection. On other families,
@@ -173,9 +195,9 @@ Tailor checks installed session files and the LightDM service after installing
 accessories and before copying the costume sysroot. Accessory overlays retain
 their existing ordering. On non-Debian systems the check precedes all overlays.
 It configures the default session and enables LightDM after sysroot (and, on
-Debian, finalization). It does not restart the login service or
-change the default boot target. Package installation scripts may independently
-manage services. An existing graphical boot target is assumed.
+Debian, finalization). On systemd it selects `graphical.target` for the next
+boot and disables enabled competing display managers. It does not restart
+the login service. Package installation scripts may independently manage services.
 
 `init` accepts `auto` (also the default), `systemd`, `sysvinit`, or `openrc`.
 Automatic detection uses runtime markers and PID 1; it does not assume systemd

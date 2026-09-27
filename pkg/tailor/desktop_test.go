@@ -69,7 +69,7 @@ func TestDesktopApplyPreservesConfigurationAndDoesNotRestart(t *testing.T) {
 			t.Fatalf("missing %s in %s", want, data)
 		}
 	}
-	want := [][]string{{"systemctl", "show", "lightdm.service", "--property=LoadState", "--value"}, {"systemctl", "enable", "--force", "lightdm.service"}}
+	want := [][]string{{"systemctl", "show", "lightdm.service", "--property=LoadState", "--value"}, {"systemctl", "enable", "--force", "lightdm.service"}, {"systemctl", "list-unit-files", "--no-legend", "slim.service", "gdm3.service", "gdm.service", "sddm.service"}, {"systemctl", "set-default", "graphical.target"}}
 	if !reflect.DeepEqual(commands, want) {
 		t.Fatalf("commands=%v", commands)
 	}
