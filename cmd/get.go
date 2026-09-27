@@ -11,7 +11,7 @@ func getCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "get [url]",
-		Short: "clone or pull atelier repository in ./wardrobe",
+		Short: "clone or pull atelier repository in ~/.wardrobe",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			url := repoURL

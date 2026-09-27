@@ -11,7 +11,7 @@ import (
 	"github.com/pieroproietti/penguins-tailor/pkg/distro"
 )
 
-func TestWearRefreshesBeforeSuit(t *testing.T) {
+func TestWearDryRunSkipsRefresh(t *testing.T) {
 	tempDir := t.TempDir()
 	costumeDir := filepath.Join(tempDir, "v2", "costumes", "ordering")
 	if err := os.MkdirAll(costumeDir, 0755); err != nil {
@@ -45,7 +45,7 @@ func TestWearRefreshesBeforeSuit(t *testing.T) {
 		t.Fatalf("Wear failed: %v", err)
 	}
 
-	want := []string{"refresh", "apply"}
+	want := []string{"apply"}
 	if !slices.Equal(events, want) {
 		t.Fatalf("Wear lifecycle events = %v, want %v", events, want)
 	}
@@ -77,6 +77,9 @@ func TestApplySuitChecksHeadersAfterRepositoryUpdate(t *testing.T) {
 }
 
 func TestWearStopsWhenInitialRefreshFails(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("real wear requires root; package operations are mocked")
+	}
 	originalNewPackageManager := newWearPackageManager
 	originalEnsureHeaders := ensureWearHeaders
 	originalApplySuit := applyWearSuit
@@ -98,7 +101,7 @@ func TestWearStopsWhenInitialRefreshFails(t *testing.T) {
 		applyWearSuit = originalApplySuit
 	})
 
-	err := Wear("ordering", true, "", true)
+	err := Wear("ordering", true, "", false)
 	if !errors.Is(err, refreshErr) {
 		t.Fatalf("Wear error = %v, want refresh error", err)
 	}

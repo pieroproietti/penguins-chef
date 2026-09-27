@@ -82,6 +82,9 @@ func loadSuit(yamlFile string) (*Suit, error) {
 		return nil, err
 	}
 	suit.normalize()
+	if err := validateDesktop(&suit); err != nil {
+		return nil, err
+	}
 
 	// Auto-discovery: if packages.yaml or packages.yml is present in the directory,
 	// automatically load and merge packages into suit.Packages

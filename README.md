@@ -146,3 +146,89 @@ Special thanks to **[Charlie Martínez](https://github.com/charliemartinez)** [Q
 
 MIT License. Copyright (c) 2026 Piero Proietti.
 
+
+## Experimental desktop selection (`devel`)
+
+Costumes can opt into desktop configuration with these top-level fields:
+
+```yaml
+desktop: xfce
+display_manager: lightdm
+session_type: x11
+init: auto
+```
+
+The first implementation supports **LightDM with systemd, SysVinit (update-rc.d), or OpenRC**.
+Desktop identifiers are `gnome`, `plasma`, `xfce`, `cinnamon`, `mate`, `lxqt`,
+and `budgie`. SDDM, GDM and COSMIC are not yet implemented. Existing costumes without these fields keep their previous behavior.
+Put the fields in the costume itself; nested accessories do not select the login.
+
+On Debian-family systems, a minimal recipe without package lists or accessories
+gets the desktop package, `lightdm` and `lightdm-gtk-greeter`. Existing recipes
+with package lists or accessories retain their curated package selection. On other families,
+the desktop, LightDM and a working greeter must already be installed; no package
+installation or arbitrary costume scripts are added to the configuration-only path.
+
+Tailor checks installed session files and the LightDM service after installing
+accessories and before copying the costume sysroot. Accessory overlays retain
+their existing ordering. On non-Debian systems the check precedes all overlays.
+It configures the default session and enables LightDM after sysroot (and, on
+Debian, finalization). It does not restart the login service or
+change the default boot target. Package installation scripts may independently
+manage services. An existing graphical boot target is assumed.
+
+`init` accepts `auto` (also the default), `systemd`, `sysvinit`, or `openrc`.
+Automatic detection uses runtime markers and PID 1; it does not assume systemd
+just because `systemctl` is installed. An explicit value must match the running
+system. This selects the service backend; it never installs or replaces init.
+Chroots/offline roots are not supported. SysVinit uses `update-rc.d` and disables
+other installed login-manager scripts. OpenRC requires `/etc/init.d/lightdm`,
+enables it in `default`, and removes known competing login entries from that
+runlevel. Custom OpenRC runlevels are not managed. These operations do not start,
+stop or restart the active login service. Legacy recipe scripts may do more.
+
+`session_type` accepts `x11`, `wayland`, or `auto` (also the default when omitted).
+An explicit protocol never falls back to another one. In this prototype, `auto`
+selects only an unambiguous installed session; otherwise it reports an error and
+asks for an explicit protocol. Identical session names present in both X11 and
+Wayland directories are rejected because LightDM's basename setting cannot
+express that distinction. The login screen's own display protocol is unchanged.
+
+The default is written to `[Seat:*] user-session` in `/etc/lightdm/lightdm.conf`,
+preserving other settings. Existing per-user session choices and more specific
+seat settings may override it. Desktop-specific configuration remains in sysroot.
+This is a prototype: graphics-driver compatibility, greeter readiness, customized
+session paths, and every distribution/version combination are not validated.
+Configuration writes are not transactional if service activation fails.
+
+An example local wardrobe is in `examples/desktop`. To inspect the simulated flow:
+
+```bash
+go build -o /tmp/tailor-devel .
+cd examples/desktop
+/tmp/tailor-devel wear xfce-lightdm --dry-run --linear
+```
+
+Dry-run prints the desktop plan and skips package refresh, installation and login
+configuration; installed-session/service validation is deferred to a real run.
+The existing reporting/logging mechanism can still write diagnostic files.
+Try a real wear in a disposable VM before using this experimental branch on a
+workstation. No real wear is required to run `go test ./...`.
+
+Configuration reference: [LightDM's configuration](https://github.com/ubuntu/lightdm/blob/main/data/lightdm.conf).
+
+Service references: [Debian update-rc.d](https://manpages.debian.org/unstable/init-system-helpers/update-rc.d.8.en.html), [OpenRC guide](https://github.com/OpenRC/openrc/blob/master/user-guide.md).
+
+### Wardrobe v3 on Tailor devel
+
+This development branch selects the `v3/` collection when present, then
+falls back to `v2/` or an unversioned wardrobe. The same selection applies to
+`list`, `show`, and `wear`, including local development wardrobes when
+`~/.wardrobe` is absent. A selected collection supplies its own costumes,
+accessories, scripts, and branding; missing costumes are not mixed across versions.
+
+`tailor get` clones or updates the entire repository, so it also downloads
+`v3/` once that directory is published on the selected remote branch.
+It does not automatically switch to the wardrobe's `devel` branch.
+If the new collection is published there, use `tailor get --branch devel`.
+Local, uncommitted wardrobe changes cannot be downloaded with `get`.

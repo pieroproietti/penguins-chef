@@ -12,6 +12,10 @@ type WardrobeInfo struct {
 
 // Suit represents the index.yaml standard structure
 type Suit struct {
+	Desktop              string    `yaml:"desktop"`
+	DisplayManager       string    `yaml:"display_manager"`
+	SessionType          string    `yaml:"session_type"`
+	Init                 string    `yaml:"init"`
 	Name                 string    `yaml:"name"`
 	Description          string    `yaml:"description"`
 	Author               string    `yaml:"author"`

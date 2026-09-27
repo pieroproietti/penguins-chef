@@ -1,0 +1,6 @@
+name: xfce-lightdm
+description: Experimental Xfce and LightDM configuration
+desktop: xfce
+display_manager: lightdm
+session_type: x11
+init: auto
