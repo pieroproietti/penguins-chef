@@ -22,8 +22,6 @@ var (
 	promptWearConfirm     = promptConfirm
 	applyWearSysroot      = applySysroot
 	copyWearSkelToUser    = copySkelToUser
-	prepareWearDesktop    = prepareDesktop
-	applyWearDesktop      = applyDesktop
 )
 
 func Wear(costumeName string, linear bool, branch string, dryRun bool) error {
@@ -42,17 +40,15 @@ func Wear(costumeName string, linear bool, branch string, dryRun bool) error {
 			distroName = d.FamilyID
 		}
 		utils.LogWarning("Distribution '%s' (family: %s) is not supported.", distroName, d.FamilyID)
-		if !promptWearConfirm("Do you want to apply sysroot, optional desktop settings and the user home configuration without installing packages?") {
+		if !promptWearConfirm("Do you want to copy sysroot to / and configure the user home directory?") {
 			utils.LogError("Distribution '%s' (family: %s) is not supported. Tailor currently supports Debian derivatives.", distroName, d.FamilyID)
 			return fmt.Errorf("unsupported distribution family: %s", d.FamilyID)
 		}
 		return wearSysrootOnly(costumeName, linear, branch, dryRun, systemIdentity)
 	}
 
-	if !dryRun {
-		if err := pm.Refresh(); err != nil {
-			return fmt.Errorf("failed to refresh package metadata: %w", err)
-		}
+	if err := pm.Refresh(); err != nil {
+		return fmt.Errorf("failed to refresh package metadata: %w", err)
 	}
 
 	root, err := getWearWardrobeRoot()
@@ -61,14 +57,14 @@ func Wear(costumeName string, linear bool, branch string, dryRun bool) error {
 		return err
 	}
 
-	// If branch is specified, or if the wardrobe repository does not exist yet (and we're not in local ./v3 or ./v2 dev mode),
+	// If branch is specified, or if the wardrobe repository does not exist yet (and we're not in local ./v2 dev mode),
 	// ensure wardrobe is fetched/cloned and on the right branch.
 	if branch != "" {
 		if err := Get("", branch); err != nil {
 			return fmt.Errorf("failed to get costumes repository on branch '%s': %w", branch, err)
 		}
 	} else if _, errStat := os.Stat(root); os.IsNotExist(errStat) {
-		if versionedWardrobeDir(".") == "" {
+		if stat, errV2 := os.Stat("v2"); errV2 != nil || !stat.IsDir() {
 			if err := Get("", ""); err != nil {
 				return fmt.Errorf("failed to download costumes repository: %w", err)
 			}
@@ -96,7 +92,6 @@ func Wear(costumeName string, linear bool, branch string, dryRun bool) error {
 		utils.LogError("%s", incompatibleDistroMessage(suit.Name, suit.Distributions, currentDistroName()))
 		return err
 	}
-	addDesktopPackages(suit)
 
 	isDirectAccessory := strings.HasPrefix(costumeName, "accessories/") || (suit.Name != "" && !strings.Contains(costumeDir, "/costumes/"))
 	if !isDirectAccessory {
@@ -306,11 +301,6 @@ func Wear(costumeName string, linear bool, branch string, dryRun bool) error {
 		}
 	}
 
-	// Desktop packages may be supplied by accessories (e.g. Quirinux).
-	if err := prepareWearDesktop(suit, dryRun); err != nil {
-		return err
-	}
-
 	// Costume Sysroot Overlay
 	applyWearSysroot(costumeDir, suit.Name, dryRun, false)
 
@@ -328,9 +318,6 @@ func Wear(costumeName string, linear bool, branch string, dryRun bool) error {
 	}
 
 	// User environment synchronization
-	if err := applyWearDesktop(suit, dryRun); err != nil {
-		return err
-	}
 	targetUser := getTargetUsername()
 	if targetUser != "" && targetUser != "root" {
 		if ss != nil {
@@ -910,7 +897,7 @@ func wearSysrootOnly(costumeName string, linear bool, branch string, dryRun bool
 			return fmt.Errorf("failed to get costumes repository on branch '%s': %w", branch, err)
 		}
 	} else if _, errStat := os.Stat(root); os.IsNotExist(errStat) {
-		if versionedWardrobeDir(".") == "" {
+		if stat, errV2 := os.Stat("v2"); errV2 != nil || !stat.IsDir() {
 			if err := Get("", ""); err != nil {
 				return fmt.Errorf("failed to download costumes repository: %w", err)
 			}
@@ -980,9 +967,6 @@ func wearSysrootOnly(costumeName string, linear bool, branch string, dryRun bool
 	}
 
 	// Apply accessories sysroot
-	if err := prepareWearDesktop(suit, dryRun); err != nil {
-		return err
-	}
 	if len(suit.Accessories) > 0 {
 		if ss != nil {
 			ss.SetAction("Applying accessories sysroot (%d items)...", len(suit.Accessories))
@@ -1006,9 +990,6 @@ func wearSysrootOnly(costumeName string, linear bool, branch string, dryRun bool
 		utils.PrintSubSection("-->", fmt.Sprintf("Applying system configuration (sysroot) for %s...", suit.Name))
 	}
 	applyWearSysroot(costumeDir, suit.Name, dryRun, false)
-	if err := applyWearDesktop(suit, dryRun); err != nil {
-		return err
-	}
 
 	// User environment synchronization
 	targetUser := getTargetUsername()
@@ -1057,7 +1038,7 @@ func wearSysrootOnly(costumeName string, linear bool, branch string, dryRun bool
 		summaryRows = append(summaryRows, [2]string{"Atelier", atelierVal})
 	}
 	summaryRows = append(summaryRows,
-		[2]string{"Mode", "Configuration only (no package installation)"},
+		[2]string{"Mode", "Sysroot & home configuration only"},
 		[2]string{"System configuration", "Applied (sysroot overlay)"},
 	)
 	if targetUser != "" && targetUser != "root" {
@@ -1074,12 +1055,9 @@ func wearSysrootOnly(costumeName string, linear bool, branch string, dryRun bool
 		summaryRows = append(summaryRows, [2]string{"System log", tailorLogFile})
 	}
 
-	if suit.Desktop != "" {
-		summaryRows = append(summaryRows, [2]string{"Desktop / login / session", suit.Desktop + " / " + suit.DisplayManager + " / " + suit.SessionType})
-	}
-	summaryTitle := "✨ WEAR COMPLETED (CONFIGURATION ONLY)!"
+	summaryTitle := "✨ WEAR COMPLETED (SYSROOT ONLY)!"
 	if dryRun {
-		summaryTitle = "✨ WEAR COMPLETED (SIMULATION - CONFIGURATION ONLY)!"
+		summaryTitle = "✨ WEAR COMPLETED (SIMULATION - SYSROOT ONLY)!"
 	}
 	utils.PrintSummaryBox(summaryTitle, summaryRows)
 	return nil

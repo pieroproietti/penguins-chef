@@ -15,16 +15,16 @@ import (
 // elevated process.
 //
 // Priority order:
-//  1. SUDO_USER  -- set by sudo, identifies the calling user reliably.
-//  2. logname    -- reads the kernel audit loginuid; survives any number
-//     of 'su' invocations, unlike environment variables that
-//     each elevation mechanism may or may not preserve.
-//     Needed for distros without sudo (e.g. Quirinux/Devuan)
-//     where 'su' is the normal way to become root and
-//     os.UserHomeDir() returns /root instead of the real home.
-//  3. firstHumanUser -- scan /etc/passwd for the first UID 1000-59999 with
-//     a valid login shell, last resort before giving up.
-//  4. os.UserHomeDir() -- process HOME, works when not elevated at all.
+// 1. SUDO_USER  -- set by sudo, identifies the calling user reliably.
+// 2. logname    -- reads the kernel audit loginuid; survives any number
+//                  of 'su' invocations, unlike environment variables that
+//                  each elevation mechanism may or may not preserve.
+//                  Needed for distros without sudo (e.g. Quirinux/Devuan)
+//                  where 'su' is the normal way to become root and
+//                  os.UserHomeDir() returns /root instead of the real home.
+// 3. firstHumanUser -- scan /etc/passwd for the first UID 1000-59999 with
+//                       a valid login shell, last resort before giving up.
+// 4. os.UserHomeDir() -- process HOME, works when not elevated at all.
 func getWardrobeRoot() (string, error) {
 	var homeDir string
 
@@ -62,40 +62,29 @@ func getWardrobeRoot() (string, error) {
 	return filepath.Join(homeDir, ".wardrobe"), nil
 }
 
-// getWardrobeV2Dir resolves the collection, preferring v3 on this development
-// branch and falling back to v2 and unversioned wardrobes.
+// getWardrobeV2Dir returns ~/.wardrobe/v2 for the "real" user if present, or ~/.wardrobe,
+// falling back to local working directory ./v2 if present during development.
 func getWardrobeV2Dir() (string, error) {
 	root, err := getWardrobeRoot()
-	if err != nil {
-		return "", err
-	}
-	return resolveWardrobeCollection(root, "."), nil
-}
-
-func versionedWardrobeDir(root string) string {
-	for _, version := range []string{"v3", "v2"} {
-		dir := filepath.Join(root, version)
-		if stat, err := os.Stat(dir); err == nil && stat.IsDir() {
-			return dir
+	if err == nil {
+		v2 := filepath.Join(root, "v2")
+		if _, errStat := os.Stat(v2); errStat == nil {
+			return v2, nil
+		}
+		if _, errStat := os.Stat(root); errStat == nil {
+			return root, nil
 		}
 	}
-	return ""
-}
 
-func resolveWardrobeCollection(root, local string) string {
-	if dir := versionedWardrobeDir(root); dir != "" {
-		return dir
-	}
-	if stat, err := os.Stat(root); err == nil && stat.IsDir() {
-		return root
-	}
-	if dir := versionedWardrobeDir(local); dir != "" {
-		if abs, err := filepath.Abs(dir); err == nil {
-			return abs
+	// Fallback to local working directory ./v2 if developing in repo
+	if stat, errStat := os.Stat("v2"); errStat == nil && stat.IsDir() {
+		if abs, errAbs := filepath.Abs("v2"); errAbs == nil {
+			return abs, nil
 		}
-		return dir
+		return "v2", nil
 	}
-	return root
+
+	return root, nil
 }
 
 // firstHumanUser scans /etc/passwd for the first real (non-system) user:
@@ -181,6 +170,7 @@ func getGitBranch(dir string) string {
 
 	return ""
 }
+
 
 // getGitOrigin extracts the remote origin URL from a directory containing a .git repository.
 func getGitOrigin(dir string) string {
