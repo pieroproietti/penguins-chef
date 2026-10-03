@@ -20,10 +20,11 @@ type Recipe struct {
 }
 
 type Profile struct {
-	Repositories []File   `yaml:"repositories"`
-	Packages     []string `yaml:"packages"`
-	Files        []File   `yaml:"files"`
-	Services     []string `yaml:"services"`
+	Repositories  []File   `yaml:"repositories"`
+	Packages      []string `yaml:"packages"`
+	Files         []File   `yaml:"files"`
+	Services      []string `yaml:"services"`
+	DefaultTarget string   `yaml:"default_target"`
 }
 
 type File struct {
@@ -61,10 +62,13 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 	if err != nil {
 		return plan, err
 	}
-	if len(profile.Services) > 0 {
+	if len(profile.Services) > 0 || profile.DefaultTarget != "" {
 		if _, err := initFor(init); err != nil {
 			return plan, err
 		}
+	}
+	if profile.DefaultTarget != "" && (!identifier.MatchString(profile.DefaultTarget) || !strings.HasSuffix(profile.DefaultTarget, ".target")) {
+		return plan, fmt.Errorf("invalid default target %q", profile.DefaultTarget)
 	}
 	paths := map[string]bool{}
 	for _, f := range append(append([]File{}, profile.Repositories...), profile.Files...) {
@@ -116,6 +120,9 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 	}
 	for _, service := range profile.Services {
 		plan.Steps = append(plan.Steps, Step{ID: "service:" + service, Phase: "init", Service: service})
+	}
+	if profile.DefaultTarget != "" {
+		plan.Steps = append(plan.Steps, Step{ID: "default-target:" + profile.DefaultTarget, Phase: "init", DefaultTarget: profile.DefaultTarget})
 	}
 	return plan, nil
 }

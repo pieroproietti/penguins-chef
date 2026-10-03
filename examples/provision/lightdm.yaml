@@ -10,6 +10,7 @@ profiles:
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
+    default_target: graphical.target
     services:
       - lightdm.service
   archlinux:
@@ -21,6 +22,7 @@ profiles:
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
+    default_target: graphical.target
     services:
       - lightdm.service
   fedora:
@@ -32,5 +34,6 @@ profiles:
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
+    default_target: graphical.target
     services:
       - lightdm.service

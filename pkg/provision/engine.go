@@ -19,13 +19,14 @@ type Plan struct {
 }
 
 type Step struct {
-	ID           string
-	Phase        string
-	Command      []string
-	Availability []string
-	Packages     []string
-	File         *File
-	Service      string
+	ID            string
+	Phase         string
+	Command       []string
+	Availability  []string
+	Packages      []string
+	File          *File
+	DefaultTarget string
+	Service       string
 }
 
 type Runner interface {
@@ -69,6 +70,9 @@ func (p Plan) Describe(w io.Writer) error {
 		}
 		if s.Service != "" {
 			detail = "check/enable/verify " + s.Service + " (no start)"
+		}
+		if s.DefaultTarget != "" {
+			detail = "check/set-default/verify " + s.DefaultTarget + " (next boot)"
 		}
 		if _, err := fmt.Fprintf(w, "[%s] %s: %s\n", s.Phase, s.ID, detail); err != nil {
 			return err
@@ -169,6 +173,31 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 	if s.File != nil {
 		return reconcileFile(*s.File)
 	}
+	if s.DefaultTarget != "" {
+		if _, err := initFor(p.Init); err != nil {
+			return err
+		}
+		check := []string{"systemctl", "get-default"}
+		out, err := r.Output(ctx, check)
+		if err != nil {
+			return err
+		}
+		if strings.TrimSpace(out) == s.DefaultTarget {
+			return nil
+		}
+		if err := r.Run(ctx, []string{"systemctl", "set-default", s.DefaultTarget}); err != nil {
+			return err
+		}
+		out, err = r.Output(ctx, check)
+		if err != nil {
+			return err
+		}
+		if strings.TrimSpace(out) != s.DefaultTarget {
+			return fmt.Errorf("default target is not %s", s.DefaultTarget)
+		}
+		return nil
+	}
+
 	if s.Service != "" {
 		backend, err := initFor(p.Init)
 		if err != nil {

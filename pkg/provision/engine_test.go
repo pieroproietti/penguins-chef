@@ -21,6 +21,8 @@ type fakeRunner struct {
 	family        string
 	events        []string
 	installed     map[string]bool
+	defaultTarget string
+	brokenTarget  bool
 	enabled       bool
 	unavailable   string
 	failRun       string
@@ -51,6 +53,8 @@ func (r *fakeRunner) Output(_ context.Context, args []string) (string, error) {
 			return "No matching packages", nil
 		}
 		return "tailor-package:" + last + "\n", nil
+	case args[0] == "systemctl" && args[1] == "get-default":
+		return r.defaultTarget + "\n", nil
 	case args[0] == "systemctl":
 		if r.enabled {
 			return "enabled\n", nil
@@ -72,6 +76,12 @@ func (r *fakeRunner) Run(_ context.Context, args []string) error {
 	r.events = append(r.events, event)
 	if r.failRun != "" && strings.Contains(event, r.failRun) {
 		return errors.New("transaction failed")
+	}
+	if args[0] == "systemctl" && args[1] == "set-default" {
+		if !r.brokenTarget {
+			r.defaultTarget = args[2]
+		}
+		return nil
 	}
 	if args[0] == "systemctl" {
 		if !r.brokenService {
@@ -363,5 +373,63 @@ func TestDNFAvailabilityRejectsEmptyAndDiagnosticOutput(t *testing.T) {
 	}
 	if err := backend.validateAvailability("Warning: metadata refreshed\ntailor-package:lightdm\n"); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestDefaultTargetReconciliation(t *testing.T) {
+	for _, failure := range []string{"", "query", "set", "verify", "service"} {
+		t.Run(failure, func(t *testing.T) {
+			p, err := Build(Recipe{Profiles: map[string]Profile{"fedora": {Services: []string{"lightdm.service"}, DefaultTarget: "graphical.target"}}}, "fedora", "systemd")
+			if err != nil {
+				t.Fatal(err)
+			}
+			r := &fakeRunner{defaultTarget: "multi-user.target"}
+			switch failure {
+			case "query":
+				r.queryErr = errors.New("query failed")
+			case "set":
+				r.failRun = "set-default"
+			case "verify":
+				r.brokenTarget = true
+			case "service":
+				r.brokenService = true
+			}
+			err = p.Execute(context.Background(), r, io.Discard)
+			if failure != "" {
+				if err == nil {
+					t.Fatal("expected failure")
+				}
+				if failure == "service" && r.defaultTarget != "multi-user.target" {
+					t.Fatal("target changed after service failure")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if r.defaultTarget != "graphical.target" {
+				t.Fatal("default target unchanged")
+			}
+			r.events = nil
+			if err := p.Execute(context.Background(), r, io.Discard); err != nil {
+				t.Fatal(err)
+			}
+			for _, event := range r.events {
+				if strings.Contains(event, "set-default") {
+					t.Fatal("repeated target mutation")
+				}
+			}
+		})
+	}
+}
+
+func TestDefaultTargetValidation(t *testing.T) {
+	for _, target := range []string{"--bad.target", "graphical.service", "../graphical.target"} {
+		if _, err := Build(Recipe{Profiles: map[string]Profile{"fedora": {DefaultTarget: target}}}, "fedora", "systemd"); err == nil {
+			t.Fatalf("accepted %q", target)
+		}
+	}
+	if _, err := Build(Recipe{Profiles: map[string]Profile{"fedora": {DefaultTarget: "graphical.target"}}}, "fedora", "sysv"); err == nil {
+		t.Fatal("accepted unsupported init")
 	}
 }

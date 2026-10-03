@@ -19,6 +19,7 @@ profiles:
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
           user-session=xfce
+    default_target: graphical.target
     services:
       - lightdm.service
   archlinux:
@@ -42,6 +43,7 @@ profiles:
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
           user-session=xfce
+    default_target: graphical.target
     services:
       - lightdm.service
   fedora:
@@ -65,5 +67,6 @@ profiles:
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
           user-session=xfce
+    default_target: graphical.target
     services:
       - lightdm.service

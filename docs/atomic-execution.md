@@ -122,3 +122,10 @@ un display manager già abilitato.
 5. Estendere repository e init sulla base dei casi incontrati.
 
 La versione 1 nello schema è la versione del **prototipo**, non Wardrobe v3.
+
+Desktop profiles explicitly set `default_target: graphical.target`. After enabling
+services, Tailor checks `systemctl get-default`, runs `systemctl set-default`
+only if needed, and verifies the result. This selects graphical boot for the
+next restart without starting or isolating the desktop during apply. Omit
+`default_target` to retain the current boot target; the field requires systemd
+and a valid `.target` unit name.
