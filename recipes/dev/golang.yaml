@@ -1,0 +1,34 @@
+version: 1
+name: golang
+
+profiles:
+  debian:
+    packages:
+      - golang-go
+      - build-essential
+      - gdb
+      - git
+
+  archlinux:
+    packages:
+      - go
+      - gcc
+      - make
+      - gdb
+      - git
+
+  fedora:
+    packages:
+      - golang
+      - gcc
+      - make
+      - gdb
+      - git
+
+  opensuse:
+    packages:
+      - go
+      - gcc
+      - make
+      - gdb
+      - git

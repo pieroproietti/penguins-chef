@@ -510,3 +510,131 @@ func TestDisplayManagerAliasReconciliation(t *testing.T) {
 		}
 	}
 }
+
+func TestRecipeIncludeResolution(t *testing.T) {
+	dir := t.TempDir()
+	basePath := filepath.Join(dir, "base.yaml")
+	baseContent := `version: 1
+name: base
+profiles:
+  debian:
+    packages: [sudo, curl]
+    files:
+      - path: /etc/test.conf
+        content: base-content
+    services: [systemd-timesyncd.service]
+`
+	if err := os.WriteFile(basePath, []byte(baseContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	childPath := filepath.Join(dir, "child.yaml")
+	childContent := `version: 1
+name: child
+include:
+  - base.yaml
+profiles:
+  debian:
+    packages: [curl, git]
+    files:
+      - path: /etc/test.conf
+        content: child-override
+      - path: /etc/extra.conf
+        content: extra
+    default_target: graphical.target
+    services: [lightdm.service]
+`
+	if err := os.WriteFile(childPath, []byte(childContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	f, err := os.Open(childPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := Build(recipe, "debian", "systemd")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify packages: sudo, curl, git (curl deduplicated)
+	pkgsStep := false
+	for _, s := range plan.Steps {
+		if s.ID == "packages:install" {
+			pkgsStep = true
+			expected := []string{"sudo", "curl", "git"}
+			if !reflect.DeepEqual(s.Packages, expected) {
+				t.Fatalf("packages = %v, want %v", s.Packages, expected)
+			}
+		}
+	}
+	if !pkgsStep {
+		t.Fatal("packages:install step missing")
+	}
+
+	// Verify file override
+	overrideFound := false
+	for _, s := range plan.Steps {
+		if s.File != nil && s.File.Path == "/etc/test.conf" {
+			if s.File.Content != "child-override" {
+				t.Fatalf("file content = %q, want %q", s.File.Content, "child-override")
+			}
+			overrideFound = true
+		}
+	}
+	if !overrideFound {
+		t.Fatal("overridden file /etc/test.conf not found in plan")
+	}
+
+	// Verify services: timesyncd and lightdm
+	services := []string{}
+	for _, s := range plan.Steps {
+		if s.Service != "" {
+			services = append(services, s.Service)
+		}
+	}
+	expectedServices := []string{"systemd-timesyncd.service", "lightdm.service"}
+	if !reflect.DeepEqual(services, expectedServices) {
+		t.Fatalf("services = %v, want %v", services, expectedServices)
+	}
+}
+
+func TestRecipeIncludeCircularDetection(t *testing.T) {
+	dir := t.TempDir()
+	aPath := filepath.Join(dir, "a.yaml")
+	bPath := filepath.Join(dir, "b.yaml")
+
+	aContent := fmt.Sprintf("version: 1\nname: a\ninclude:\n  - %s\nprofiles:\n  debian: {}\n", bPath)
+	bContent := fmt.Sprintf("version: 1\nname: b\ninclude:\n  - %s\nprofiles:\n  debian: {}\n", aPath)
+
+	if err := os.WriteFile(aPath, []byte(aContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(bPath, []byte(bContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	f, err := os.Open(aPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Build(recipe, "debian", "systemd")
+	if err == nil || !strings.Contains(err.Error(), "circular include detected") {
+		t.Fatalf("expected circular include error, got: %v", err)
+	}
+}
+

@@ -1,0 +1,48 @@
+version: 1
+name: devel
+
+include:
+  - ../base/base.yaml
+  - golang.yaml
+  - vscode.yaml
+
+profiles:
+  debian:
+    packages:
+      - jq
+      - ripgrep
+    files:
+      - path: /etc/profile.d/devel.sh
+        content: |
+          export GOPATH=$HOME/go
+          export PATH=$PATH:$GOPATH/bin
+
+  archlinux:
+    packages:
+      - jq
+      - ripgrep
+    files:
+      - path: /etc/profile.d/devel.sh
+        content: |
+          export GOPATH=$HOME/go
+          export PATH=$PATH:$GOPATH/bin
+
+  fedora:
+    packages:
+      - jq
+      - ripgrep
+    files:
+      - path: /etc/profile.d/devel.sh
+        content: |
+          export GOPATH=$HOME/go
+          export PATH=$PATH:$GOPATH/bin
+
+  opensuse:
+    packages:
+      - jq
+      - ripgrep
+    files:
+      - path: /etc/profile.d/devel.sh
+        content: |
+          export GOPATH=$HOME/go
+          export PATH=$PATH:$GOPATH/bin

@@ -1,0 +1,28 @@
+version: 1
+name: colibri
+
+include:
+  - ../../desktop/xfce4.yaml
+
+sysroot: sysroot
+
+profiles:
+  debian:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+
+  archlinux:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+
+  fedora:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+
+  opensuse:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin

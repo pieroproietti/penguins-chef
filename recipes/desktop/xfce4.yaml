@@ -1,0 +1,85 @@
+version: 1
+name: xfce4-desktop
+
+include:
+  - ../base/base.yaml
+  - lightdm.yaml
+
+profiles:
+  debian:
+    packages:
+      - xserver-xorg
+      - xfce4
+      - xfce4-terminal
+      - fonts-dejavu-core
+      - firefox-esr
+      - spice-vdagent
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=xfce
+
+  archlinux:
+    packages:
+      - xorg-server
+      - xfce4-session
+      - xfce4-panel
+      - xfce4-settings
+      - xfce4-terminal
+      - xfdesktop
+      - xfwm4
+      - thunar
+      - ttf-dejavu
+      - firefox
+      - spice-vdagent
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=xfce
+
+  fedora:
+    packages:
+      - xorg-x11-server-Xorg
+      - xfce4-session
+      - xfce4-panel
+      - xfce4-settings
+      - xfce4-terminal
+      - xfdesktop
+      - xfwm4
+      - Thunar
+      - dejavu-sans-fonts
+      - firefox
+      - spice-vdagent
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=xfce
+
+  opensuse:
+    packages:
+      - xorg-x11-server
+      - xfce4-session
+      - xfce4-panel
+      - xfce4-settings
+      - xfce4-terminal
+      - pipewire
+      - pipewire-pulseaudio
+      - wireplumber
+      - xfdesktop
+      - xfwm4
+      - thunar
+      - dejavu-fonts
+      - MozillaFirefox
+      - spice-vdagent
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=xfce

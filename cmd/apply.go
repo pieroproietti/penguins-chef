@@ -41,6 +41,11 @@ func applyCmd() *cobra.Command {
 					targetInit = "systemd"
 				}
 			}
+			resolved, err := recipe.Resolve()
+			if err != nil {
+				return err
+			}
+			recipe = resolved
 			if sysroot != "" {
 				recipe.Sysroot = "" // The explicit CLI source overrides the recipe default.
 			}

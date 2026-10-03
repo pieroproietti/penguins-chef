@@ -225,3 +225,107 @@ systemctl --user status pipewire.socket pipewire-pulse.socket wireplumber.servic
 ```
 
 Riferimento: https://doc.opensuse.org/documentation/tumbleweed/pipewire/
+
+## Composizione delle ricette e organizzazione dell'albero
+
+Con l'evoluzione verso ricette modulari, la storica dicotomia tra "costumi" (desktop completi) e "accessori" (funzioni o pacchetti singoli) viene superata: **ogni elemento è una ricetta autonoma (`recipe`)**. 
+
+La differenza tra un componente essenziale (es. solo `lightdm` o solo il compilatore Go) e una configurazione desktop ricca (come `colibri`) non è nella sintassi o nella natura dell'oggetto, ma unicamente nel suo **livello di composizione e aggregazione**.
+
+### 1. Composizione esplicita (`include`)
+
+Per rispettare il principio DRY (*Don't Repeat Yourself*) ed evitare la duplicazione dei profili pacchetti per ciascuna distribuzione, le ricette supporteranno la composizione esplicita dichiarativa:
+
+```yaml
+version: 1
+name: colibri-desktop
+
+include:
+  - ../desktop/xfce4.yaml
+
+sysroot: colibri/sysroot
+
+profiles:
+  debian:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+  archlinux:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+  fedora:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+  opensuse:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+      - pipewire
+      - pipewire-pulseaudio
+      - wireplumber
+```
+
+#### Regole di risoluzione del piano unificato:
+- **Percorsi**: i file inclusi sono risolti relativamente alla cartella della ricetta includente.
+- **`packages` e `services`**: unione ordinata e deduplicata per la famiglia bersaglio.
+- **`repositories`**: unione dei file sorgente dichiarati.
+- **`files`**: unione dei file di configurazione; in caso di stesso `path`, il file dichiarato nella ricetta includente (figlia) ha la precedenza di override su quello incluso (padre).
+- **`sysroot`**: applicato nella fase dedicata (`sysroot:copy`) prima dei servizi.
+- **Trasparenza**: `--dry-run` mostra sempre il piano finale completamente risolto, rendendo verificabili tutte le operazioni prima di qualsiasi mutazione.
+
+### 2. Struttura dell'albero delle ricette
+
+L'albero dei file si organizza per dominio funzionale e scopo, mantenendo gli asset `sysroot` strettamente associati alla propria ricetta:
+
+```text
+recipes/
+├── base/                   # Componenti e utilità di base del sistema
+│   ├── base.yaml           # Repository, shell, permessi, pacchetti e profili essenziali
+│   └── audio-pipewire.yaml # Stack audio moderno di sistema (PipeWire + WirePlumber)
+│
+├── desktop/                # Ambienti grafici upstream/vanilla (senza branding)
+│   ├── lightdm.yaml        # Sottosistema Display Manager LightDM e target grafico
+│   ├── xfce4.yaml          # XFCE desktop di fabbrica (include lightdm.yaml e agenti grafici)
+│   ├── gnome.yaml          # GNOME vanilla
+│   └── plasma.yaml         # KDE Plasma vanilla
+│
+├── dev/                    # Ruoli e ambienti di sviluppo
+│   ├── golang.yaml         # Compilatore Go e toolchain essenziale
+│   ├── vscode.yaml         # Editor Visual Studio Code
+│   └── devel.yaml          # Suite completa di sviluppo (include golang + vscode)
+│
+└── costumes/               # Configurazioni complete e personalizzate (branding + sysroot)
+    ├── colibri/
+    │   ├── colibri.yaml    # Include desktop/xfce4.yaml + asset Colibri
+    │   └── sysroot/        # Wallpaper, icone, impostazioni Xfconf, /etc/skel
+    └── quirinux/
+        ├── quirinux.yaml   # Include desktop/xfce4.yaml + pacchetti grafici/audio + sysroot
+        └── sysroot/
+```
+
+Questa struttura garantisce che un utente possa installare:
+- Solo un display manager: `tailor apply recipes/desktop/lightdm.yaml`
+- Un desktop XFCE standard di distribuzione: `tailor apply recipes/desktop/xfce4.yaml`
+- Il costume rifinito e personalizzato: `tailor apply recipes/costumes/colibri/colibri.yaml`
+- Un ambiente di sviluppo additivo su una macchina già configurata: `tailor apply recipes/dev/devel.yaml`
+
+### 3. Granularità e livello di astrazione: evitare il "meta-package-manager"
+
+Un rischio critico nella modularizzazione è l'anti-pattern della **frammentazione eccessiva**: creare un file `.yaml` per ogni singolo pacchetto o micro-utility (ad esempio creare `curl.yaml`, `git.yaml` o `spice-vdagent.yaml`).
+
+Questa frammentazione comporterebbe gravi svantaggi:
+1. **Duplicazione del ruolo dei gestori nativi**: APT, Pacman, DNF e Zypper gestiscono già egregiamente le dipendenze e i pacchetti foglia.
+2. **Debito di manutenzione insostenibile**: decine o centinaia di micro-file con definizioni e nomi pacchetto da mantenere sincronizzati su ogni distribuzione.
+3. **Stravolgimento dello scopo di Tailor**: Tailor non è un package manager universale, ma un sarto di sistema che confeziona e applica **ambienti, ruoli e costumi coerenti**.
+
+#### La regola di granularità:
+- **Cosa NON è una ricetta**: un singolo pacchetto o utility isolata. Singoli pacchetti come `curl`, `git` o `spice-vdagent` non richiedono una ricetta dedicata, ma vanno semplicemente inseriti nella lista `packages:` della ricetta che ne richiede la presenza (ad esempio, `spice-vdagent` appartiene alla ricetta desktop come `xfce4.yaml`, poiché ha senso operativo solo all'interno di una sessione grafica X11/Wayland per sincronizzare appunti e ridimensionamento schermo).
+- **Cosa È una ricetta**: un **sottosistema funzionale o ruolo completo** che coordina:
+  1. Un insieme logico di pacchetti dedicati a uno scopo (es. l'ambiente desktop o la toolchain di sviluppo).
+  2. File di configurazione di sistema mirati (`files:`).
+  3. Servizi di sistema da abilitare (`services:`).
+  4. Eventuali target di avvio (`default_target:`) o asset di personalizzazione (`sysroot:`).
+
+
