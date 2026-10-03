@@ -25,6 +25,7 @@ type Step struct {
 	Availability  []string
 	Packages      []string
 	File          *File
+	Hostname      string
 	DefaultTarget string
 	Service       string
 	Sysroot       string
@@ -69,6 +70,9 @@ func (p Plan) Describe(w io.Writer) error {
 		if s.File != nil {
 			detail = "check/write/verify " + s.File.Path + " (0644)"
 		}
+		if s.Hostname != "" {
+			detail = "check/set/verify " + s.Hostname
+		}
 		if s.Service != "" {
 			detail = "check/enable/verify " + s.Service + " (no start)"
 			if (p.Family == "opensuse" || p.Family == "archlinux") && s.Service == "lightdm.service" {
@@ -101,6 +105,13 @@ func (p Plan) Execute(ctx context.Context, r Runner, w io.Writer) error {
 		if s.File != nil {
 			if err := regularPath(s.File.Path); err != nil {
 				return fmt.Errorf("%s preflight: %w", s.ID, err)
+			}
+		}
+		if s.Hostname != "" {
+			if _, isHost := r.(HostRunner); isHost {
+				if info, err := os.Lstat(defaultHostsPath); err == nil && info.IsDir() {
+					return fmt.Errorf("%s preflight: %s is a directory", s.ID, defaultHostsPath)
+				}
 			}
 		}
 	}
@@ -187,6 +198,9 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 	}
 	if s.File != nil {
 		return reconcileFile(*s.File)
+	}
+	if s.Hostname != "" {
+		return reconcileHostname(ctx, r, s.Hostname)
 	}
 	if s.DefaultTarget != "" {
 		if _, err := initFor(p.Init); err != nil {
@@ -294,6 +308,43 @@ func regularPath(path string) error {
 	return nil
 }
 
+var defaultHostsPath = "/etc/hosts"
+
+func writeAtomicFile(path, content string, perm os.FileMode) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".tailor-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	defer tmp.Close()
+	if _, err := tmp.WriteString(content); err != nil {
+		return err
+	}
+	if err := tmp.Chmod(perm); err != nil {
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp.Name(), path); err != nil {
+		return err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if string(data) != content {
+		return fmt.Errorf("file verification failed: %s", path)
+	}
+	return nil
+}
+
 func reconcileFile(f File) error {
 	if err := regularPath(f.Path); err != nil {
 		return err
@@ -311,36 +362,130 @@ func reconcileFile(f File) error {
 			return nil
 		}
 	}
-	if err := os.MkdirAll(filepath.Dir(f.Path), 0755); err != nil {
-		return err
-	}
-	tmp, err := os.CreateTemp(filepath.Dir(f.Path), ".tailor-*")
+	return writeAtomicFile(f.Path, f.Content, 0644)
+}
+
+func reconcileHostname(ctx context.Context, r Runner, hostname string) error {
+	check := []string{"hostnamectl", "hostname"}
+	out, err := r.Output(ctx, check)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
-	defer tmp.Close()
-	if _, err := tmp.WriteString(f.Content); err != nil {
-		return err
+	current := strings.TrimSpace(out)
+	if current != hostname {
+		if err := r.Run(ctx, []string{"hostnamectl", "set-hostname", hostname}); err != nil {
+			return err
+		}
+		out, err = r.Output(ctx, check)
+		if err != nil {
+			return err
+		}
+		if strings.TrimSpace(out) != hostname {
+			return fmt.Errorf("hostname is not %s", hostname)
+		}
 	}
-	if err := tmp.Chmod(0644); err != nil {
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp.Name(), f.Path); err != nil {
-		return err
-	}
-	data, err = os.ReadFile(f.Path)
-	if err != nil {
-		return err
-	}
-	if string(data) != f.Content {
-		return fmt.Errorf("file verification failed: %s", f.Path)
+	if _, isHost := r.(HostRunner); isHost {
+		if err := reconcileHostsFile(defaultHostsPath, current, hostname); err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+func reconcileHostsFile(path, oldHost, newHost string) error {
+	data, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	content := string(data)
+	updated := updateHostsContent(content, oldHost, newHost)
+	if updated == content && err == nil {
+		return nil
+	}
+	return writeAtomicFile(path, updated, 0644)
+}
+
+func updateHostsContent(content, oldHost, newHost string) string {
+	if strings.TrimSpace(content) == "" {
+		return fmt.Sprintf("127.0.0.1 localhost %s\n::1 localhost\n", newHost)
+	}
+
+	lines := strings.Split(content, "\n")
+	hasTrailingNewline := strings.HasSuffix(content, "\n")
+	if hasTrailingNewline && len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+
+	canReplaceOld := oldHost != "" &&
+		oldHost != "localhost" &&
+		oldHost != "localhost.localdomain" &&
+		oldHost != newHost
+
+	newHostFound := false
+	var targetLineIdx = -1
+	var fallbackLineIdx = -1
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		ip := fields[0]
+		isLoopback := strings.HasPrefix(ip, "127.") || ip == "::1"
+		if !isLoopback {
+			continue
+		}
+
+		if ip == "127.0.1.1" {
+			targetLineIdx = i
+		} else if ip == "127.0.0.1" && targetLineIdx == -1 {
+			fallbackLineIdx = i
+		}
+
+		lineModified := false
+		for j := 1; j < len(fields); j++ {
+			host := fields[j]
+			if host == newHost {
+				newHostFound = true
+			}
+			if canReplaceOld {
+				if host == oldHost {
+					fields[j] = newHost
+					newHostFound = true
+					lineModified = true
+				} else if host == oldHost+".localdomain" {
+					fields[j] = newHost + ".localdomain"
+					lineModified = true
+				} else if host == oldHost+".localhost" {
+					fields[j] = newHost + ".localhost"
+					lineModified = true
+				}
+			}
+		}
+		if lineModified {
+			lines[i] = strings.Join(fields, " ")
+		}
+	}
+
+	if !newHostFound {
+		chosenIdx := targetLineIdx
+		if chosenIdx == -1 {
+			chosenIdx = fallbackLineIdx
+		}
+		if chosenIdx != -1 {
+			lines[chosenIdx] = lines[chosenIdx] + " " + newHost
+		} else {
+			lines = append(lines, fmt.Sprintf("127.0.0.1 localhost %s", newHost))
+		}
+	}
+
+	res := strings.Join(lines, "\n")
+	if hasTrailingNewline {
+		res += "\n"
+	}
+	return res
 }

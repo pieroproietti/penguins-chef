@@ -17,6 +17,7 @@ import (
 type Recipe struct {
 	Version  int                `yaml:"version"`
 	Name     string             `yaml:"name"`
+	Hostname string             `yaml:"hostname"`
 	Include  []string           `yaml:"include"`
 	Profiles map[string]Profile `yaml:"profiles"`
 	Sysroot  string             `yaml:"sysroot"`
@@ -74,6 +75,7 @@ func (r Recipe) resolve(visited map[string]bool) (Recipe, error) {
 	merged := Recipe{
 		Version:  r.Version,
 		Name:     r.Name,
+		Hostname: r.Hostname,
 		Profiles: make(map[string]Profile),
 		Sysroot:  r.Sysroot,
 		baseDir:  r.baseDir,
@@ -120,6 +122,7 @@ func mergeRecipes(base, override Recipe) Recipe {
 	res := Recipe{
 		Version:  base.Version,
 		Name:     base.Name,
+		Hostname: base.Hostname,
 		Profiles: make(map[string]Profile),
 		Sysroot:  base.Sysroot,
 		baseDir:  base.baseDir,
@@ -130,8 +133,13 @@ func mergeRecipes(base, override Recipe) Recipe {
 	if override.Name != "" {
 		res.Name = override.Name
 	}
+	if override.Hostname != "" {
+		res.Hostname = override.Hostname
+	}
 	if override.Sysroot != "" {
 		res.Sysroot = override.Sysroot
+	}
+	if override.baseDir != "" {
 		res.baseDir = override.baseDir
 	}
 
@@ -215,7 +223,18 @@ func mergeProfiles(base, override Profile) Profile {
 	return res
 }
 
-var identifier = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.+@:-]*$`)
+var (
+	identifier    = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.+@:-]*$`)
+	hostnameRegex = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$`)
+)
+
+func isCostume(r Recipe) bool {
+	if r.Hostname != "" {
+		return true
+	}
+	clean := filepath.ToSlash(r.baseDir)
+	return strings.Contains("/"+clean+"/", "/costumes/")
+}
 
 // Build validates the whole selected profile before creating any operation.
 func Build(recipe Recipe, family, init string) (Plan, error) {
@@ -233,7 +252,11 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 	if err != nil {
 		return plan, err
 	}
-	if len(profile.Services) > 0 || profile.DefaultTarget != "" {
+	hostname := recipe.Hostname
+	if hostname == "" && isCostume(recipe) {
+		hostname = recipe.Name
+	}
+	if len(profile.Services) > 0 || profile.DefaultTarget != "" || hostname != "" {
 		if _, err := initFor(init); err != nil {
 			return plan, err
 		}
@@ -288,6 +311,12 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 	}
 	for _, f := range profile.Files {
 		plan.Steps = append(plan.Steps, Step{ID: "file:" + f.Path, Phase: "configuration", File: &f})
+	}
+	if hostname != "" {
+		if !hostnameRegex.MatchString(hostname) {
+			return plan, fmt.Errorf("invalid hostname %q", hostname)
+		}
+		plan.Steps = append(plan.Steps, Step{ID: "hostname:" + hostname, Phase: "configuration", Hostname: hostname})
 	}
 	for _, service := range profile.Services {
 		plan.Steps = append(plan.Steps, Step{ID: "service:" + service, Phase: "init", Service: service})

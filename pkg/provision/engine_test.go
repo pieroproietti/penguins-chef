@@ -23,6 +23,8 @@ type fakeRunner struct {
 	installed      map[string]bool
 	defaultTarget  string
 	brokenTarget   bool
+	hostname       string
+	brokenHostname bool
 	enabled        bool
 	unavailable    string
 	failRun        string
@@ -40,6 +42,8 @@ func (r *fakeRunner) Output(_ context.Context, args []string) (string, error) {
 	}
 	last := args[len(args)-1]
 	switch {
+	case args[0] == "hostnamectl" && args[1] == "hostname":
+		return r.hostname + "\n", nil
 	case args[0] == "zypper":
 		if last == r.unavailable {
 			return "<stream><search-result/></stream>", nil
@@ -85,6 +89,12 @@ func (r *fakeRunner) Run(_ context.Context, args []string) error {
 	r.events = append(r.events, event)
 	if r.failRun != "" && strings.Contains(event, r.failRun) {
 		return errors.New("transaction failed")
+	}
+	if args[0] == "hostnamectl" && args[1] == "set-hostname" {
+		if !r.brokenHostname {
+			r.hostname = args[2]
+		}
+		return nil
 	}
 	if args[0] == "systemctl" && args[1] == "set-default" {
 		if !r.brokenTarget {
@@ -637,4 +647,247 @@ func TestRecipeIncludeCircularDetection(t *testing.T) {
 		t.Fatalf("expected circular include error, got: %v", err)
 	}
 }
+
+func TestHostnameReconciliation(t *testing.T) {
+	ctx := context.Background()
+
+	// 1. Hostname change needed: queries, sets, verifies.
+	r := &fakeRunner{hostname: "oldhost"}
+	p := Plan{Steps: []Step{{ID: "hostname:newhost", Phase: "configuration", Hostname: "newhost"}}}
+	if err := p.Execute(ctx, r, io.Discard); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if r.hostname != "newhost" {
+		t.Fatalf("hostname was not updated, got %s", r.hostname)
+	}
+	expectedEvents := []string{
+		"hostnamectl hostname",
+		"hostnamectl set-hostname newhost",
+		"hostnamectl hostname",
+	}
+	if !reflect.DeepEqual(r.events, expectedEvents) {
+		t.Fatalf("events = %v, want %v", r.events, expectedEvents)
+	}
+
+	// 2. Idempotent: hostname already matches, no mutation needed.
+	r = &fakeRunner{hostname: "newhost"}
+	if err := p.Execute(ctx, r, io.Discard); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(r.events) != 1 || r.events[0] != "hostnamectl hostname" {
+		t.Fatalf("unexpected events on already-matching hostname: %v", r.events)
+	}
+
+	// 3. Execution failure during set-hostname.
+	r = &fakeRunner{hostname: "oldhost", failRun: "set-hostname"}
+	if err := p.Execute(ctx, r, io.Discard); err == nil {
+		t.Fatal("expected failure when set-hostname fails")
+	}
+
+	// 4. Verification failure: hostnamectl output does not match target.
+	r = &fakeRunner{hostname: "oldhost", brokenHostname: true}
+	if err := p.Execute(ctx, r, io.Discard); err == nil || !strings.Contains(err.Error(), "hostname is not newhost") {
+		t.Fatalf("expected verification failure, got: %v", err)
+	}
+}
+
+func TestUpdateHostsContent(t *testing.T) {
+	// Debian style: replace oldhost and oldhost.localdomain on 127.0.1.1
+	debianHosts := "127.0.0.1 localhost\n127.0.1.1 debian debian.localdomain\n::1 localhost ip6-localhost ip6-loopback\n"
+	updatedDebian := updateHostsContent(debianHosts, "debian", "colibri")
+	expectedDebian := "127.0.0.1 localhost\n127.0.1.1 colibri colibri.localdomain\n::1 localhost ip6-localhost ip6-loopback\n"
+	if updatedDebian != expectedDebian {
+		t.Fatalf("debian hosts mismatch:\ngot:\n%s\nwant:\n%s", updatedDebian, expectedDebian)
+	}
+
+	// Fedora style: no oldhost in file, append to 127.0.0.1
+	fedoraHosts := "127.0.0.1 localhost localhost.localdomain\n::1 localhost\n"
+	updatedFedora := updateHostsContent(fedoraHosts, "fedora", "colibri")
+	expectedFedora := "127.0.0.1 localhost localhost.localdomain colibri\n::1 localhost\n"
+	if updatedFedora != expectedFedora {
+		t.Fatalf("fedora hosts mismatch:\ngot:\n%s\nwant:\n%s", updatedFedora, expectedFedora)
+	}
+
+	// Idempotency: newhost already present
+	idempotent := updateHostsContent(expectedFedora, "fedora", "colibri")
+	if idempotent != expectedFedora {
+		t.Fatalf("idempotency failed, content changed:\n%s", idempotent)
+	}
+
+	// Never replace localhost even if oldHost is passed as "localhost"
+	localhostInput := "127.0.0.1 localhost\n::1 localhost\n"
+	updatedLocalhost := updateHostsContent(localhostInput, "localhost", "colibri")
+	if strings.Contains(updatedLocalhost, "127.0.0.1 colibri\n") {
+		t.Fatal("localhost was wrongly overwritten")
+	}
+	if !strings.Contains(updatedLocalhost, "127.0.0.1 localhost colibri") {
+		t.Fatalf("colibri was not appended to localhost line: %s", updatedLocalhost)
+	}
+
+	// Empty input generates standard hosts
+	emptyResult := updateHostsContent("", "", "colibri")
+	expectedEmpty := "127.0.0.1 localhost colibri\n::1 localhost\n"
+	if emptyResult != expectedEmpty {
+		t.Fatalf("empty content result mismatch:\ngot:\n%s\nwant:\n%s", emptyResult, expectedEmpty)
+	}
+}
+
+func TestReconcileHostsFile(t *testing.T) {
+	dir := t.TempDir()
+	hostsPath := filepath.Join(dir, "hosts")
+	initial := "127.0.0.1 localhost\n127.0.1.1 oldbox\n"
+	if err := os.WriteFile(hostsPath, []byte(initial), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := reconcileHostsFile(hostsPath, "oldbox", "colibri"); err != nil {
+		t.Fatalf("reconcileHostsFile failed: %v", err)
+	}
+
+	data, err := os.ReadFile(hostsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := "127.0.0.1 localhost\n127.0.1.1 colibri\n"
+	if string(data) != expected {
+		t.Fatalf("got:\n%s\nwant:\n%s", string(data), expected)
+	}
+
+	info, err := os.Stat(hostsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0644 {
+		t.Fatalf("permissions = %v, want 0644", info.Mode().Perm())
+	}
+
+	// Idempotent second run
+	if err := reconcileHostsFile(hostsPath, "colibri", "colibri"); err != nil {
+		t.Fatalf("second run failed: %v", err)
+	}
+	data2, err := os.ReadFile(hostsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data2) != expected {
+		t.Fatalf("content changed on second run: %s", string(data2))
+	}
+}
+
+func TestCostumeHostnameInBuild(t *testing.T) {
+	// Explicit Hostname set
+	r1 := Recipe{
+		Version:  1,
+		Name:     "custom",
+		Hostname: "myhost",
+		Profiles: map[string]Profile{"fedora": {}},
+	}
+	p1, err := Build(r1, "fedora", "systemd")
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+	var foundHostname bool
+	for _, s := range p1.Steps {
+		if s.ID == "hostname:myhost" && s.Hostname == "myhost" && s.Phase == "configuration" {
+			foundHostname = true
+			break
+		}
+	}
+	if !foundHostname {
+		t.Fatal("step hostname:myhost missing from plan")
+	}
+
+	// Costume directory detection when Hostname is empty
+	r2 := Recipe{
+		Version:  1,
+		Name:     "colibri",
+		baseDir:  "/home/user/recipes/costumes/colibri",
+		Profiles: map[string]Profile{"fedora": {}},
+	}
+	p2, err := Build(r2, "fedora", "systemd")
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+	foundHostname = false
+	for _, s := range p2.Steps {
+		if s.ID == "hostname:colibri" && s.Hostname == "colibri" && s.Phase == "configuration" {
+			foundHostname = true
+			break
+		}
+	}
+	if !foundHostname {
+		t.Fatal("step hostname:colibri missing from costume plan")
+	}
+
+	// Non-costume recipe (desktop) without explicit hostname has NO hostname step
+	r3 := Recipe{
+		Version:  1,
+		Name:     "xfce4",
+		baseDir:  "/home/user/recipes/desktop",
+		Profiles: map[string]Profile{"fedora": {}},
+	}
+	p3, err := Build(r3, "fedora", "systemd")
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+	for _, s := range p3.Steps {
+		if strings.HasPrefix(s.ID, "hostname:") || s.Hostname != "" {
+			t.Fatalf("non-costume recipe unexpectedly configured hostname: %v", s)
+		}
+	}
+
+	// Invalid hostname validation
+	invalidNames := []string{"-leadingdash", "trailingdash-", "has_underscore", "toolong" + strings.Repeat("x", 60)}
+	for _, inv := range invalidNames {
+		rInv := Recipe{
+			Version:  1,
+			Name:     "test",
+			Hostname: inv,
+			Profiles: map[string]Profile{"fedora": {}},
+		}
+		if _, err := Build(rInv, "fedora", "systemd"); err == nil {
+			t.Fatalf("Build accepted invalid hostname %q", inv)
+		}
+	}
+
+	// Unsupported init with hostname
+	if _, err := Build(r1, "fedora", "sysv"); err == nil {
+		t.Fatal("Build accepted sysv init with hostname step")
+	}
+}
+
+func TestColibriRecipeHasHostname(t *testing.T) {
+	path := "../../recipes/costumes/colibri/colibri.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open colibri.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load colibri.yaml: %v", err)
+	}
+	if recipe.Hostname != "colibri" {
+		t.Fatalf("recipe.Hostname = %q, want %q", recipe.Hostname, "colibri")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var found bool
+		for _, s := range plan.Steps {
+			if s.ID == "hostname:colibri" && s.Hostname == "colibri" && s.Phase == "configuration" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("step hostname:colibri missing in plan for family %s", family)
+		}
+	}
+}
+
 

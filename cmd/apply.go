@@ -87,6 +87,12 @@ func applyCmd() *cobra.Command {
 					break
 				}
 			}
+			for _, step := range plan.Steps {
+				if step.Hostname != "" && targetInit == "systemd" {
+					tools = append(tools, "hostnamectl")
+					break
+				}
+			}
 			for _, tool := range tools {
 				if _, err := exec.LookPath(tool); err != nil {
 					return err

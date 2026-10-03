@@ -12,7 +12,8 @@ Il percorso eseguibile applica ricette autonome e complete. Il primo esempio
 5. Controllare i pacchetti installati, installare quelli mancanti in una
    transazione, verificare l'esito di ogni pacchetto.
 6. Confrontare, scrivere e verificare i file di configurazione.
-7. Controllare, abilitare e verificare i servizi attraverso il backend init.
+7. Controllare, impostare e verificare l'hostname di sistema (per i costumi o dichiarazioni esplicite `hostname:`), aggiornando `/etc/hosts` per garantire la corretta risoluzione locale.
+8. Controllare, abilitare e verificare i servizi attraverso il backend init.
 
 Ogni errore interrompe il piano. Le operazioni completate rimangono applicate:
 "atomico" indica qui un'unità con risultato verificabile, non una transazione
@@ -74,6 +75,14 @@ per ciascuna famiglia; la loro disponibilità viene controllata all'esecuzione.
   può causare un conflitto che interrompe l'esecuzione: non viene sostituito
   automaticamente. L'installazione dei pacchetti può comunque avviare servizi
   tramite gli script del gestore pacchetti.
+- **Gestione dell'hostname nei costumi**: applicare un costume (ricette in `recipes/costumes/`
+  o che specificano esplicitamente `hostname:`) configura l'hostname del sistema (`hostname:<nome>`).
+  Tailor controlla lo stato reale interrogando `hostnamectl hostname`; se diverso, invoca
+  `hostnamectl set-hostname <nome>` e verifica la corrispondenza post-condizione. Inoltre
+  aggiorna atomicamente `/etc/hosts` associando il nuovo hostname agli indirizzi di loopback
+  (`127.0.0.1` o `127.0.1.1`), preservando `localhost` ed evitando ritardi o avvisi da parte
+  di `sudo` o sessioni grafiche. Le ricette generiche di base o desktop (come `xfce4.yaml` o
+  `base.yaml`) non modificano l'hostname se non esplicitamente richiesto.
 
 ## Verifica su macchine reali
 
@@ -274,6 +283,7 @@ profiles:
 - **`packages` e `services`**: unione ordinata e deduplicata per la famiglia bersaglio.
 - **`repositories`**: unione dei file sorgente dichiarati.
 - **`files`**: unione dei file di configurazione; in caso di stesso `path`, il file dichiarato nella ricetta includente (figlia) ha la precedenza di override su quello incluso (padre).
+- **`hostname`**: ereditato o sovrascritto dalla ricetta figlia; per i costumi (cartella `costumes/`) assume come valore predefinito il nome del costume se non diversamente specificato.
 - **`sysroot`**: applicato nella fase dedicata (`sysroot:copy`) prima dei servizi.
 - **Trasparenza**: `--dry-run` mostra sempre il piano finale completamente risolto, rendendo verificabili tutte le operazioni prima di qualsiasi mutazione.
 
