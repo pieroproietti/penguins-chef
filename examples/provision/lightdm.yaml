@@ -1,0 +1,25 @@
+version: 1
+name: lightdm
+profiles:
+  debian:
+    packages:
+      - lightdm
+      - lightdm-gtk-greeter
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+    services:
+      - lightdm.service
+  archlinux:
+    packages:
+      - lightdm
+      - lightdm-gtk-greeter
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+    services:
+      - lightdm.service

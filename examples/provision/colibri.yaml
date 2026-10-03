@@ -1,0 +1,46 @@
+# First Colibri desktop slice, not a replacement for the full Wardrobe costume.
+# Networking, audio, branding, user assets, base and eggs-dev will follow.
+version: 1
+name: colibri-desktop
+profiles:
+  debian:
+    packages:
+      - xserver-xorg
+      - xfce4
+      - xfce4-terminal
+      - lightdm
+      - lightdm-gtk-greeter
+      - fonts-dejavu-core
+      - firefox-esr
+      - spice-vdagent
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=xfce
+    services:
+      - lightdm.service
+  archlinux:
+    packages:
+      - xorg-server
+      - xfce4-session
+      - xfce4-panel
+      - xfce4-settings
+      - xfce4-terminal
+      - xfdesktop
+      - xfwm4
+      - thunar
+      - lightdm
+      - lightdm-gtk-greeter
+      - ttf-dejavu
+      - firefox
+      - spice-vdagent
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=xfce
+    services:
+      - lightdm.service

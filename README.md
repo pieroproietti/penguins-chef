@@ -34,6 +34,14 @@ sudo make install
 
 ## 👔 Command Reference
 
+The `redesign/atomic-execution` branch also provides an experimental `apply`
+command for explicit repository → packages → configuration → init plans.
+See [the execution model and LightDM example](docs/atomic-execution.md).
+
+```bash
+tailor apply examples/provision/lightdm.yaml --dry-run --family archlinux --init systemd
+```
+
 ### Basic Commands
 
 - **`tailor get [url]`**
@@ -145,4 +153,3 @@ Special thanks to **[Charlie Martínez](https://github.com/charliemartinez)** [Q
 ## 📜 License
 
 MIT License. Copyright (c) 2026 Piero Proietti.
-

@@ -20,5 +20,6 @@ func init() {
 	rootCmd.AddCommand(listCmd())
 	rootCmd.AddCommand(showCmd())
 	rootCmd.AddCommand(wearCmd())
+	rootCmd.AddCommand(applyCmd())
 	rootCmd.AddCommand(versionCmd())
 }
