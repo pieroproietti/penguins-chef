@@ -122,16 +122,8 @@ func ExecWithTechnicalLogger(command string, logger *TechnicalLogger) error {
 	return nil
 }
 
-// ExecInteractive executes an interactive command. If split screen is active,
-// it temporarily releases the scrolling region to allow fullscreen curses/dialog interfaces,
-// restoring it upon completion.
+// ExecInteractive executes an interactive command with logged terminal output.
 func ExecInteractive(command string, logFilePath string) error {
-	ensureRootPath()
-
-	if ss := GetSplitScreen(); ss != nil && ss.IsActive() {
-		return ss.ExecInteractive(command, logFilePath)
-	}
-
 	return ExecTee(command, logFilePath)
 }
 

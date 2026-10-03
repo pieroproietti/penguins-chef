@@ -12,8 +12,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Recipe is deliberately distinct from Wardrobe v2; profiles are complete,
-// explicit definitions, rather than implicit merges of distro recipes.
+// Recipe profiles are complete, explicit definitions rather than implicit
+// merges of distro recipes.
 type Recipe struct {
 	Version  int                `yaml:"version"`
 	Name     string             `yaml:"name"`

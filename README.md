@@ -1,23 +1,18 @@
 # penguins-tailor
 
-**penguins-tailor** is a standalone, lightweight tool written in Go to manage and apply system configurations, desktop environments, and themes ("costumes") to Linux distributions.
-
-`tailor` works in conjunction with costume repositories ("wardrobes") containing declarative YAML definitions, package lists, and system configuration files. By default, it connects to the official [penguins-wardrobe](https://github.com/pieroproietti/penguins-wardrobe) repository, but it can also work with any third-party or custom wardrobe by supplying the Git repository URL.
+**penguins-tailor** is a standalone, lightweight tool written in Go to apply explicit system configuration recipes to Linux distributions. Recipes and their assets live alongside the project or wherever the user keeps them; Tailor does not download or depend on a separate costume repository.
 
 ---
 
 ## 🚀 Features
 
-- **Get**: Download or update a costume repository (`tailor get`).
-- **List**: Enumerate available costumes and their descriptions (`tailor list`).
-- **Show**: Inspect detailed information and packages required by a costume (`tailor show <costume>`).
-- **Wear**: Seamlessly apply a costume to the system (`sudo tailor wear <costume>`), configuring repositories, packages, sysroot configurations, and user skel settings.
+- **Apply**: Validate and execute an operation-based recipe (`tailor apply <recipe.yaml>`), with a reviewable dry run.
 - **Export**: Transfer native packages (`tailor export pkg`) or execution logs and reports (`tailor export log`) to remote storage via SSH.
 - **Build**: Integrated packaging tool to compile binaries and produce native distribution packages (`tailor tools build`).
 - **Repo**: Configure or remove official `penguins-eggs.net` repositories (`sudo tailor tools repo [add|rm]`).
 - **Distro-Aware**: Automatically identifies target distributions (Debian, Ubuntu, Arch, Alpine, Fedora, openSUSE, etc.) and generates assistance prompts if non-Debian package managers are present.
 
-> NOTE: At present, Tailor is only tested on the Debian family of distributions (Debian, Devuan, Ubuntu, and their derivatives). We have plans to expand support to Arch Linux and possibly other distributions in the future. The major hurdle is the inconsistency in package naming conventions, which we might eventually address through AI.
+The operation-based engine supports explicit profiles for Debian, Arch Linux, Fedora and openSUSE. See [the execution model and examples](docs/atomic-execution.md) for its current scope and limitations.
 
 ---
 
@@ -34,60 +29,12 @@ sudo make install
 
 ## 👔 Command Reference
 
-The `redesign/atomic-execution` branch also provides an experimental `apply`
-command for explicit repository → packages → configuration → init plans.
-The prototype supports APT, pacman and DNF with systemd, with explicit Debian, Arch and Fedora profiles.
-See [the execution model and LightDM example](docs/atomic-execution.md).
+`apply` builds an explicit repository → packages → configuration → init plan.
+Use `--dry-run` to inspect the operations before applying them.
 
 ```bash
 tailor apply examples/provision/lightdm.yaml --dry-run --family archlinux --init systemd
 ```
-
-### Basic Commands
-
-- **`tailor get [url]`**
-  Clones or updates the costumes repository into `~/.wardrobe`. If no URL is specified, it defaults to the official repository (`https://github.com/pieroproietti/penguins-wardrobe`). You can also specify an alternative or third-party wardrobe repository and an optional branch (`-b, --branch`):
-  ```bash
-  # Official penguins-wardrobe repository (default)
-  tailor get
-
-  # Custom or third-party wardrobe repository
-  tailor get https://github.com/charliemartinez/penguins-wardrobe
-
-  # Custom wardrobe repository specifying a branch
-  tailor get https://github.com/charliemartinez/penguins-wardrobe -b develop
-  ```
-
-  **Flags:**
-  - `-u, --url <url>`: URL of the costumes repository.
-  - `-b, --branch <branch>`: Branch of the costumes repository.
-
-- **`tailor list`**
-  Lists all available costumes found in the repository along with a brief description.
-  ```bash
-  tailor list
-  ```
-
-- **`tailor show <costume>`**
-  Shows detailed metadata for a specific costume (e.g. description, supported distributions, packages, accessories, and commands).
-  ```bash
-  tailor show colibri
-  ```
-
-- **`tailor wear <costume>`**
-  Applies the specified costume to the system. Requires root privileges (`sudo`). You can also specify an optional branch (`-b, --branch`) to automatically switch or clone the costumes repository on that branch before applying:
-  ```bash
-  sudo tailor wear colibri
-
-  # Simulate costume application without modifying the system (does not require root)
-  tailor wear colibri --dry-run
-  ```
-  **Flags:**
-  - `-b, --branch <branch>`: Branch of the costumes repository.
-  - `-n, --dry-run`: Simulate costume installation without making changes (allows running without root).
-  - `--linear`: Use linear standard output without split screen TUI.
-
----
 
 ### Export Commands
 

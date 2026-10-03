@@ -1,8 +1,7 @@
 # Nuovo motore: operazioni verificabili
 
-Questo branch esplora un nuovo modello, separato dalle ricette Wardrobe v2.
-Il primo percorso eseguibile è LightDM su Debian, Arch e Fedora con systemd; il
-traguardo successivo è Colibri completo, inclusi gli accessori.
+Il percorso eseguibile applica ricette autonome e complete. Il primo esempio
+è LightDM; Colibri copre il desktop, con ulteriori funzioni ancora da portare.
 
 ## Contratto
 
@@ -37,13 +36,12 @@ go run . apply examples/provision/colibri.yaml --dry-run --family archlinux --in
 sudo tailor apply examples/provision/lightdm.yaml
 ```
 
-`apply` non scarica Wardrobe e non seleziona fallback per altre distribuzioni.
-Il piano mostra tutte le operazioni prima di eseguirle. Gli override della
-famiglia e dell'init sono permessi soltanto nella simulazione. Il comando
-`wear` continua a usare il percorso v2 esistente.
+`apply` usa solo la ricetta fornita e non seleziona fallback per altre
+distribuzioni. Il piano mostra tutte le operazioni prima di eseguirle. Gli override della
+famiglia e dell'init sono permessi soltanto nella simulazione.
 
 `colibri.yaml` è una prima fetta del desktop, non il porting completo del
-costume Wardrobe: non include ancora rete, audio, branding, configurazioni
+precedente costume: non include ancora rete, audio, branding, configurazioni
 utente e gli accessori `base`/`eggs-dev`. I nomi dei pacchetti sono espliciti
 per ciascuna famiglia; la loro disponibilità viene controllata all'esecuzione.
 
@@ -121,7 +119,7 @@ un display manager già abilitato.
 4. Portare asset, configurazione utente, `base` ed `eggs-dev`.
 5. Estendere repository e init sulla base dei casi incontrati.
 
-La versione 1 nello schema è la versione del **prototipo**, non Wardrobe v3.
+La versione 1 nello schema è la versione del formato ricetta di questo branch.
 
 Desktop profiles explicitly set `default_target: graphical.target`. After enabling
 services, Tailor checks `systemctl get-default`, runs `systemctl set-default`
@@ -187,7 +185,7 @@ Riferimento: [installazione desktop Manjaro](https://wiki.manjaro.org/index.php?
 La ricetta `examples/provision/colibri.yaml` dichiara
 `sysroot: colibri/sysroot`, risolto rispetto alla directory della ricetta,
 anche quando il comando viene eseguito da un'altra directory. Il sysroot
-ripulito è versionato insieme agli esempi: non serve un checkout Wardrobe.
+ripulito è versionato insieme agli esempi.
 
 ```bash
 tailor apply examples/provision/colibri.yaml --dry-run

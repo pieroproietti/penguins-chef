@@ -79,25 +79,6 @@ func Fatal(format string, a ...interface{}) {
 
 const sectionDivider = "============================================================"
 
-// PrintBannerConfig prints a boxed main header with structured configuration
-func PrintBannerConfig(cfg SplitScreenConfig) {
-	lines := FormatHeaderLines(cfg)
-	fmt.Println()
-	for _, l := range lines {
-		fmt.Printf("%s\n", l)
-	}
-	fmt.Printf("%s%s%s\n", colorize(ColorCyan), sectionDivider, colorize(ColorReset))
-}
-
-// PrintBanner prints a boxed main header
-func PrintBanner(icon, title, subtitle string) {
-	PrintBannerConfig(SplitScreenConfig{
-		Icon:    icon,
-		Costume: title,
-		Notes:   subtitle,
-	})
-}
-
 // PrintSection prints a main section divider
 func PrintSection(icon, title string) {
 	fmt.Println()
