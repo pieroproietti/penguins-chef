@@ -38,6 +38,11 @@ func (r *fakeRunner) Output(_ context.Context, args []string) (string, error) {
 	}
 	last := args[len(args)-1]
 	switch {
+	case args[0] == "zypper":
+		if last == r.unavailable {
+			return "<stream><search-result/></stream>", nil
+		}
+		return `<stream><search-result><solvable-list><solvable kind="package" name="` + last + `" repository="repo-oss"/></solvable-list></search-result></stream>`, nil
 	case args[0] == "apt-cache":
 		if last == r.unavailable {
 			return "  Candidate: (none)\n", nil
@@ -89,7 +94,7 @@ func (r *fakeRunner) Run(_ context.Context, args []string) error {
 		}
 		return nil
 	}
-	if args[0] == "dnf" && args[1] == "install" {
+	if (args[0] == "dnf" && args[1] == "install") || (args[0] == "zypper" && args[2] == "install") {
 		for _, pkg := range args[3:] {
 			if pkg == "--" {
 				return errors.New("unknown argument -- for dnf install")
@@ -124,7 +129,7 @@ func fixture(t *testing.T, family string) (Plan, *fakeRunner, string) {
 }
 
 func TestExecutionOrderAndResume(t *testing.T) {
-	for _, family := range []string{"debian", "archlinux", "fedora"} {
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
 		t.Run(family, func(t *testing.T) {
 			p, r, path := fixture(t, family)
 			if err := p.Execute(context.Background(), r, io.Discard); err != nil {
@@ -143,6 +148,10 @@ func TestExecutionOrderAndResume(t *testing.T) {
 			if family == "fedora" {
 				prepare = "dnf --refresh makecache"
 				install = "dnf install -y lightdm greeter"
+			}
+			if family == "opensuse" {
+				prepare = "zypper --non-interactive refresh"
+				install = "zypper --non-interactive install lightdm greeter"
 			}
 			if r.events[0] != prepare {
 				t.Fatalf("first operation: %v", r.events)
@@ -177,7 +186,7 @@ func TestExecutionOrderAndResume(t *testing.T) {
 }
 
 func TestFailuresStopDependentOperations(t *testing.T) {
-	for _, family := range []string{"debian", "archlinux", "fedora"} {
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
 		for _, failure := range []string{"prepare", "unavailable", "install", "postcondition", "query", "service"} {
 			t.Run(family+"/"+failure, func(t *testing.T) {
 				p, r, path := fixture(t, family)
@@ -190,12 +199,18 @@ func TestFailuresStopDependentOperations(t *testing.T) {
 					if family == "fedora" {
 						r.failRun = "makecache"
 					}
+					if family == "opensuse" {
+						r.failRun = "refresh"
+					}
 				case "unavailable":
 					r.unavailable = "greeter"
 				case "install":
 					r.failRun = " -- "
 					if family == "fedora" {
 						r.failRun = "dnf install "
+					}
+					if family == "opensuse" {
+						r.failRun = "zypper --non-interactive install "
 					}
 				case "postcondition":
 					r.brokenInstall = true
@@ -339,7 +354,7 @@ func TestStrictSchema(t *testing.T) {
 		}
 	}
 	for _, example := range []string{"lightdm", "colibri"} {
-		for _, family := range []string{"debian", "archlinux", "fedora"} {
+		for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
 			f, err := os.Open("../../examples/provision/" + example + ".yaml")
 			if err != nil {
 				t.Fatal(err)
@@ -431,5 +446,20 @@ func TestDefaultTargetValidation(t *testing.T) {
 	}
 	if _, err := Build(Recipe{Profiles: map[string]Profile{"fedora": {DefaultTarget: "graphical.target"}}}, "fedora", "sysv"); err == nil {
 		t.Fatal("accepted unsupported init")
+	}
+}
+
+func TestZypperAvailabilityRequiresRepositoryPackage(t *testing.T) {
+	backend := zypperBackend{}
+	for _, out := range []string{"", "No matching packages", "<stream><search-result/></stream>", `<stream><search-result><solvable-list><solvable kind="package" name="lightdm" repository="(System Packages)"/></solvable-list></search-result></stream>`, `<stream><search-result><solvable-list><solvable kind="package" name="lightdm" repository="@System"/></solvable-list></search-result></stream>`, `<stream><search-result><solvable-list><solvable kind="pattern" name="lightdm" repository="repo-oss"/></solvable-list></search-result></stream>`} {
+		if err := backend.validateAvailability(out); err == nil {
+			t.Fatalf("accepted %q", out)
+		}
+	}
+	if err := backend.validateAvailability(`<?xml version="1.0"?><stream><message type="info">Loading repositories</message><search-result><solvable-list><solvable kind="package" name="lightdm" repository="repo-oss"/></solvable-list></search-result></stream>`); err != nil {
+		t.Fatal(err)
+	}
+	if err := backend.validateRepository(File{Path: "/etc/zypp/repos.d/test.repo"}); err == nil {
+		t.Fatal("accepted unsupported repository mutation")
 	}
 }

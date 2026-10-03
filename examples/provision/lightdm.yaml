@@ -37,3 +37,15 @@ profiles:
     default_target: graphical.target
     services:
       - lightdm.service
+  opensuse:
+    packages:
+      - lightdm
+      - lightdm-gtk-greeter
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+    default_target: graphical.target
+    services:
+      - lightdm.service

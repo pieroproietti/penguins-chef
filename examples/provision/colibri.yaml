@@ -70,3 +70,27 @@ profiles:
     default_target: graphical.target
     services:
       - lightdm.service
+  opensuse:
+    packages:
+      - xorg-x11-server
+      - xfce4-session
+      - xfce4-panel
+      - xfce4-settings
+      - xfce4-terminal
+      - xfdesktop
+      - xfwm4
+      - thunar
+      - lightdm
+      - lightdm-gtk-greeter
+      - dejavu-fonts
+      - MozillaFirefox
+      - spice-vdagent
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=xfce
+    default_target: graphical.target
+    services:
+      - lightdm.service

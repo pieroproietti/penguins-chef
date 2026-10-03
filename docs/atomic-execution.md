@@ -129,3 +129,25 @@ only if needed, and verifies the result. This selects graphical boot for the
 next restart without starting or isolating the desktop during apply. Omit
 `default_target` to retain the current boot target; the field requires systemd
 and a valid `.target` unit name.
+
+## openSUSE Tumbleweed
+
+Il backend `opensuse` usa `zypper --non-interactive refresh`, ricerca esatta
+con output XML nei repository e installazione in una singola transazione.
+La verifica dei pacchetti installati usa RPM. Non aggiunge repository esterni
+né accetta automaticamente nuove chiavi GPG. Le ricette desktop puntano a
+Tumbleweed con il servizio nativo `lightdm.service`; Leap 15.6 e sistemi
+transactional richiedono un percorso separato e non sono validati.
+
+```bash
+tailor apply examples/provision/colibri.yaml --dry-run --family opensuse --init systemd
+sudo tailor apply examples/provision/colibri.yaml
+systemctl get-default
+systemctl is-enabled lightdm.service
+```
+
+Il test reale deve verificare anche login Xfce dopo il riavvio e riapplicazione
+senza reinstallazioni. L'avvio grafico non viene attivato durante `apply`.
+
+Riferimenti: [Zypper](https://manpages.opensuse.org/Tumbleweed/zypper/zypper.8.en.html),
+[LightDM su SUSE](https://packagehub.suse.com/packages/lightdm/1_32_0-bp160_1_1/).

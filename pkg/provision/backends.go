@@ -1,6 +1,7 @@
 package provision
 
 import (
+	"encoding/xml"
 	"fmt"
 	"strings"
 )
@@ -25,6 +26,8 @@ func packagesFor(family string) (packageBackend, error) {
 		return pacmanBackend{}, nil
 	case "fedora":
 		return dnfBackend{}, nil
+	case "opensuse":
+		return zypperBackend{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported package backend %q", family)
 	}
@@ -107,6 +110,42 @@ func (dnfBackend) install(pkgs []string) []string {
 }
 func (dnfBackend) validateRepository(f File) error {
 	return fmt.Errorf("adding DNF repositories is not implemented: %q", f.Path)
+}
+
+type zypperBackend struct{}
+
+func (zypperBackend) prepare() []string {
+	return []string{"zypper", "--non-interactive", "refresh"}
+}
+func (zypperBackend) availability(pkg string) []string {
+	return []string{"zypper", "--non-interactive", "--xmlout", "--no-refresh", "search", "--match-exact", "--case-sensitive", "--details", "--type", "package", pkg}
+}
+func (zypperBackend) validateAvailability(out string) error {
+	var result struct {
+		XMLName   xml.Name `xml:"stream"`
+		Solvables []struct {
+			Kind       string `xml:"kind,attr"`
+			Name       string `xml:"name,attr"`
+			Repository string `xml:"repository,attr"`
+		} `xml:"search-result>solvable-list>solvable"`
+	}
+	if err := xml.Unmarshal([]byte(out), &result); err != nil {
+		return fmt.Errorf("invalid zypper search response: %w", err)
+	}
+	for _, pkg := range result.Solvables {
+		if pkg.Kind == "package" && identifier.MatchString(pkg.Name) && pkg.Repository != "" && pkg.Repository != "@System" && pkg.Repository != "(System Packages)" {
+			return nil
+		}
+	}
+	return fmt.Errorf("no install candidate in configured repositories")
+}
+func (zypperBackend) installed(pkg string) []string { return dnfBackend{}.installed(pkg) }
+func (zypperBackend) isInstalled(out string) bool   { return dnfBackend{}.isInstalled(out) }
+func (zypperBackend) install(pkgs []string) []string {
+	return append([]string{"zypper", "--non-interactive", "install"}, pkgs...)
+}
+func (zypperBackend) validateRepository(f File) error {
+	return fmt.Errorf("adding Zypper repositories is not implemented: %q", f.Path)
 }
 
 type initBackend interface {

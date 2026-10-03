@@ -59,7 +59,10 @@ func parseOsRelease() map[string]string {
 }
 
 func NewDistro() *Distro {
-	osInfo := parseOsRelease()
+	return distroFromRelease(parseOsRelease())
+}
+
+func distroFromRelease(osInfo map[string]string) *Distro {
 
 	rawID := strings.ToLower(osInfo["ID"])
 	rawLike := strings.ToLower(osInfo["ID_LIKE"])
@@ -98,7 +101,7 @@ func NewDistro() *Distro {
 			d.DistroLike = "Fedora"
 			return d
 
-		case "opensuse", "suse":
+		case "opensuse", "opensuse-leap", "opensuse-tumbleweed", "suse":
 			d.FamilyID = "opensuse"
 			d.DistroLike = "Opensuse"
 			return d
