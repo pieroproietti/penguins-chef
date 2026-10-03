@@ -16,6 +16,8 @@ profiles:
       - fonts-dejavu-core
       - firefox-esr
       - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
     files:
       - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
         content: |
@@ -42,6 +44,8 @@ profiles:
       - ttf-dejavu
       - firefox
       - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
     files:
       - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
         content: |
@@ -68,6 +72,8 @@ profiles:
       - dejavu-sans-fonts
       - firefox
       - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
     files:
       - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
         content: |
@@ -97,6 +103,8 @@ profiles:
       - dejavu-fonts
       - MozillaFirefox
       - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
     files:
       - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
         content: |
