@@ -70,6 +70,9 @@ func (p Plan) Describe(w io.Writer) error {
 		}
 		if s.Service != "" {
 			detail = "check/enable/verify " + s.Service + " (no start)"
+			if p.Family == "opensuse" && s.Service == "lightdm.service" {
+				detail += " (replace display-manager alias)"
+			}
 		}
 		if s.DefaultTarget != "" {
 			detail = "check/set-default/verify " + s.DefaultTarget + " (next boot)"
@@ -204,9 +207,26 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 			return err
 		}
 		check := backend.check(s.Service)
+		// openSUSE may retain the legacy display-manager alias. Selecting
+		// LightDM must reconcile that alias even if LightDM is already enabled.
+		replaceDisplayManager := p.Family == "opensuse" && s.Service == "lightdm.service"
+		aliasCheck := []string{"systemctl", "show", "--property=Id", "--value", "display-manager.service"}
+		aliasMatches := func() (bool, error) {
+			if !replaceDisplayManager {
+				return true, nil
+			}
+			out, err := r.Output(ctx, aliasCheck)
+			return strings.TrimSpace(out) == s.Service, err
+		}
 		out, err := r.Output(ctx, check)
 		if err == nil && backend.isEnabled(out) {
-			return nil
+			matches, aliasErr := aliasMatches()
+			if aliasErr != nil {
+				return aliasErr
+			}
+			if matches {
+				return nil
+			}
 		}
 		if err != nil {
 			var exitErr interface{ ExitCode() int }
@@ -214,7 +234,11 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 				return err
 			}
 		}
-		if err := r.Run(ctx, backend.enable(s.Service)); err != nil {
+		enable := backend.enable(s.Service)
+		if replaceDisplayManager {
+			enable = []string{"systemctl", "enable", "--force", s.Service}
+		}
+		if err := r.Run(ctx, enable); err != nil {
 			return err
 		}
 		out, err = r.Output(ctx, check)
@@ -223,6 +247,13 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 		}
 		if !backend.isEnabled(out) {
 			return fmt.Errorf("service %s is not persistently enabled", s.Service)
+		}
+		matches, err := aliasMatches()
+		if err != nil {
+			return err
+		}
+		if !matches {
+			return fmt.Errorf("display-manager.service does not select %s", s.Service)
 		}
 	}
 	return nil

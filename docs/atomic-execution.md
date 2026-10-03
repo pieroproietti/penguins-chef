@@ -151,3 +151,9 @@ senza reinstallazioni. L'avvio grafico non viene attivato durante `apply`.
 
 Riferimenti: [Zypper](https://manpages.opensuse.org/Tumbleweed/zypper/zypper.8.en.html),
 [LightDM su SUSE](https://packagehub.suse.com/packages/lightdm/1_32_0-bp160_1_1/).
+
+Su Tumbleweed/Slowroll il profilo LightDM sostituisce il collegamento legacy
+`display-manager.service` con `systemctl enable --force lightdm.service`.
+Verifica sia l'abilitazione persistente sia che l'alias selezioni LightDM;
+una seconda applicazione non ripete la modifica. Il servizio attivo non viene
+avviato o fermato: il passaggio avviene al prossimo riavvio.

@@ -101,7 +101,7 @@ func distroFromRelease(osInfo map[string]string) *Distro {
 			d.DistroLike = "Fedora"
 			return d
 
-		case "opensuse", "opensuse-leap", "opensuse-tumbleweed", "suse":
+		case "opensuse", "opensuse-leap", "opensuse-tumbleweed", "opensuse-slowroll", "suse":
 			d.FamilyID = "opensuse"
 			d.DistroLike = "Opensuse"
 			return d

@@ -18,17 +18,19 @@ func (e statusError) Error() string { return fmt.Sprintf("status %d", e) }
 func (e statusError) ExitCode() int { return int(e) }
 
 type fakeRunner struct {
-	family        string
-	events        []string
-	installed     map[string]bool
-	defaultTarget string
-	brokenTarget  bool
-	enabled       bool
-	unavailable   string
-	failRun       string
-	brokenInstall bool
-	brokenService bool
-	queryErr      error
+	family         string
+	events         []string
+	installed      map[string]bool
+	defaultTarget  string
+	brokenTarget   bool
+	enabled        bool
+	unavailable    string
+	failRun        string
+	brokenInstall  bool
+	brokenService  bool
+	displayManager string
+	brokenAlias    bool
+	queryErr       error
 }
 
 func (r *fakeRunner) Output(_ context.Context, args []string) (string, error) {
@@ -58,6 +60,8 @@ func (r *fakeRunner) Output(_ context.Context, args []string) (string, error) {
 			return "No matching packages", nil
 		}
 		return "tailor-package:" + last + "\n", nil
+	case args[0] == "systemctl" && args[1] == "show":
+		return r.displayManager + "\n", nil
 	case args[0] == "systemctl" && args[1] == "get-default":
 		return r.defaultTarget + "\n", nil
 	case args[0] == "systemctl":
@@ -91,6 +95,9 @@ func (r *fakeRunner) Run(_ context.Context, args []string) error {
 	if args[0] == "systemctl" {
 		if !r.brokenService {
 			r.enabled = true
+			if !r.brokenAlias {
+				r.displayManager = "lightdm.service"
+			}
 		}
 		return nil
 	}
@@ -164,7 +171,11 @@ func TestExecutionOrderAndResume(t *testing.T) {
 				}
 				return -1
 			}
-			if index(install) <= 2 || index("systemctl enable lightdm.service") <= index(install) {
+			enable := "systemctl enable lightdm.service"
+			if family == "opensuse" {
+				enable = "systemctl enable --force lightdm.service"
+			}
+			if index(install) <= 2 || index(enable) <= index(install) {
 				t.Fatalf("wrong order: %v", r.events)
 			}
 			before, _ := os.Stat(path)
@@ -461,5 +472,39 @@ func TestZypperAvailabilityRequiresRepositoryPackage(t *testing.T) {
 	}
 	if err := backend.validateRepository(File{Path: "/etc/zypp/repos.d/test.repo"}); err == nil {
 		t.Fatal("accepted unsupported repository mutation")
+	}
+}
+
+func TestOpenSUSEDisplayManagerAlias(t *testing.T) {
+	for _, enabled := range []bool{false, true} {
+		for _, broken := range []bool{false, true} {
+			p := Plan{Family: "opensuse", Init: "systemd", Steps: []Step{{ID: "service:lightdm.service", Service: "lightdm.service"}, {ID: "default-target", DefaultTarget: "graphical.target"}}}
+			r := &fakeRunner{enabled: enabled, displayManager: "display-manager-legacy.service", brokenAlias: broken, defaultTarget: "multi-user.target"}
+			err := p.Execute(context.Background(), r, io.Discard)
+			if broken {
+				if err == nil {
+					t.Fatal("accepted incorrect alias")
+				}
+				if r.defaultTarget != "multi-user.target" {
+					t.Fatal("changed target after failed alias verification")
+				}
+				continue
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if r.displayManager != "lightdm.service" {
+				t.Fatal("legacy alias retained")
+			}
+			r.events = nil
+			if err := p.Execute(context.Background(), r, io.Discard); err != nil {
+				t.Fatal(err)
+			}
+			for _, event := range r.events {
+				if strings.Contains(event, " enable ") {
+					t.Fatal("repeated enable")
+				}
+			}
+		}
 	}
 }

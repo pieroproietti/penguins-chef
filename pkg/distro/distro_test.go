@@ -23,7 +23,7 @@ func TestIdentityUsesCodenameAndReleaseFallback(t *testing.T) {
 }
 
 func TestOpenSUSEFamilyDetection(t *testing.T) {
-	for _, id := range []string{"opensuse", "opensuse-tumbleweed", "opensuse-leap"} {
+	for _, id := range []string{"opensuse", "opensuse-tumbleweed", "opensuse-slowroll", "opensuse-leap"} {
 		d := distroFromRelease(map[string]string{"ID": id})
 		if d.FamilyID != "opensuse" {
 			t.Fatalf("%s: %s", id, d.FamilyID)
