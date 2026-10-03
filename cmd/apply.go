@@ -59,6 +59,9 @@ func applyCmd() *cobra.Command {
 			if targetFamily == "archlinux" {
 				tools = []string{"pacman"}
 			}
+			if targetFamily == "fedora" {
+				tools = []string{"dnf", "rpm"}
+			}
 			if targetInit == "systemd" {
 				tools = append(tools, "systemctl")
 			}
@@ -71,7 +74,7 @@ func applyCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Print the plan without executing commands or writing files")
-	cmd.Flags().StringVar(&family, "family", "", "Preview a package family: debian or archlinux (dry-run only)")
+	cmd.Flags().StringVar(&family, "family", "", "Preview a package family: debian, archlinux or fedora (dry-run only)")
 	cmd.Flags().StringVar(&initSystem, "init", "", "Preview an init system: systemd (dry-run only)")
 	return cmd
 }

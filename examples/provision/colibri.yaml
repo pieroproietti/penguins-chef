@@ -44,3 +44,26 @@ profiles:
           user-session=xfce
     services:
       - lightdm.service
+  fedora:
+    packages:
+      - xorg-x11-server-Xorg
+      - xfce4-session
+      - xfce4-panel
+      - xfce4-settings
+      - xfce4-terminal
+      - xfdesktop
+      - xfwm4
+      - Thunar
+      - lightdm
+      - lightdm-gtk
+      - dejavu-sans-fonts
+      - firefox
+      - spice-vdagent
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=xfce
+    services:
+      - lightdm.service

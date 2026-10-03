@@ -11,7 +11,7 @@ import (
 func TestApplyDryRunDoesNotExecuteOrWrite(t *testing.T) {
 	// No executables are available: preview must not even query the host.
 	t.Setenv("PATH", t.TempDir())
-	for _, family := range []string{"debian", "archlinux"} {
+	for _, family := range []string{"debian", "archlinux", "fedora"} {
 		t.Run(family, func(t *testing.T) {
 			dir := t.TempDir()
 			target := filepath.Join(dir, "never-created")

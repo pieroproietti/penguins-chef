@@ -46,6 +46,11 @@ func (r *fakeRunner) Output(_ context.Context, args []string) (string, error) {
 			return "", statusError(1)
 		}
 		return "Name : " + last, nil
+	case args[0] == "dnf" && args[2] == "repoquery":
+		if last == r.unavailable {
+			return "No matching packages", nil
+		}
+		return "tailor-package:" + last + "\n", nil
 	case args[0] == "systemctl":
 		if r.enabled {
 			return "enabled\n", nil
@@ -98,7 +103,7 @@ func fixture(t *testing.T, family string) (Plan, *fakeRunner, string) {
 }
 
 func TestExecutionOrderAndResume(t *testing.T) {
-	for _, family := range []string{"debian", "archlinux"} {
+	for _, family := range []string{"debian", "archlinux", "fedora"} {
 		t.Run(family, func(t *testing.T) {
 			p, r, path := fixture(t, family)
 			if err := p.Execute(context.Background(), r, io.Discard); err != nil {
@@ -113,6 +118,10 @@ func TestExecutionOrderAndResume(t *testing.T) {
 			if family == "archlinux" {
 				prepare = "pacman -Syu --noconfirm"
 				install = "pacman -S --needed --noconfirm -- lightdm greeter"
+			}
+			if family == "fedora" {
+				prepare = "dnf --refresh makecache"
+				install = "dnf install -y -- lightdm greeter"
 			}
 			if r.events[0] != prepare {
 				t.Fatalf("first operation: %v", r.events)
@@ -147,7 +156,7 @@ func TestExecutionOrderAndResume(t *testing.T) {
 }
 
 func TestFailuresStopDependentOperations(t *testing.T) {
-	for _, family := range []string{"debian", "archlinux"} {
+	for _, family := range []string{"debian", "archlinux", "fedora"} {
 		for _, failure := range []string{"prepare", "unavailable", "install", "postcondition", "query", "service"} {
 			t.Run(family+"/"+failure, func(t *testing.T) {
 				p, r, path := fixture(t, family)
@@ -156,6 +165,9 @@ func TestFailuresStopDependentOperations(t *testing.T) {
 					r.failRun = "apt-get update"
 					if family == "archlinux" {
 						r.failRun = "-Syu"
+					}
+					if family == "fedora" {
+						r.failRun = "makecache"
 					}
 				case "unavailable":
 					r.unavailable = "greeter"
@@ -274,11 +286,12 @@ func TestBuildRejectsInvalidProfiles(t *testing.T) {
 		profile            Profile
 	}{
 		{"init", "debian", "sysv", Profile{Services: []string{"lightdm"}}},
-		{"backend", "fedora", "systemd", Profile{}},
+		{"backend", "alpine", "systemd", Profile{}},
 		{"argument", "debian", "systemd", Profile{Packages: []string{"--purge"}}},
 		{"relative", "debian", "systemd", Profile{Files: []File{{Path: "etc/config"}}}},
 		{"duplicate", "debian", "systemd", Profile{Files: []File{{Path: "/etc/config"}, {Path: "/etc/config"}}}},
 		{"parent-file", "debian", "systemd", Profile{Files: []File{{Path: "/etc/config"}, {Path: "/etc/config/child"}}}},
+		{"dnf-repository", "fedora", "systemd", Profile{Repositories: []File{{Path: "/etc/yum.repos.d/test.repo"}}}},
 		{"repository", "archlinux", "systemd", Profile{Repositories: []File{{Path: "/etc/pacman.conf"}}}},
 	}
 	for _, tc := range cases {
@@ -302,7 +315,7 @@ func TestStrictSchema(t *testing.T) {
 		}
 	}
 	for _, example := range []string{"lightdm", "colibri"} {
-		for _, family := range []string{"debian", "archlinux"} {
+		for _, family := range []string{"debian", "archlinux", "fedora"} {
 			f, err := os.Open("../../examples/provision/" + example + ".yaml")
 			if err != nil {
 				t.Fatal(err)
@@ -324,5 +337,17 @@ func TestStrictSchema(t *testing.T) {
 				t.Fatal("description mutated plan")
 			}
 		}
+	}
+}
+
+func TestDNFAvailabilityRejectsEmptyAndDiagnosticOutput(t *testing.T) {
+	backend := dnfBackend{}
+	for _, out := range []string{"", "No matching packages", "Warning: repository unavailable", "tailor-package:"} {
+		if err := backend.validateAvailability(out); err == nil {
+			t.Fatalf("accepted unavailable package: %q", out)
+		}
+	}
+	if err := backend.validateAvailability("Warning: metadata refreshed\ntailor-package:lightdm\n"); err != nil {
+		t.Fatal(err)
 	}
 }

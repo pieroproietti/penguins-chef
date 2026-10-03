@@ -23,6 +23,8 @@ func packagesFor(family string) (packageBackend, error) {
 		return aptBackend{}, nil
 	case "archlinux":
 		return pacmanBackend{}, nil
+	case "fedora":
+		return dnfBackend{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported package backend %q", family)
 	}
@@ -77,6 +79,33 @@ func (pacmanBackend) validateAvailability(out string) error {
 }
 func (pacmanBackend) validateRepository(f File) error {
 	return fmt.Errorf("adding pacman repositories is not implemented: %q", f.Path)
+}
+
+// DNF's repoquery can succeed without matches; use a marker so diagnostic
+// output from CombinedOutput cannot be mistaken for an available package.
+type dnfBackend struct{}
+
+func (dnfBackend) prepare() []string { return []string{"dnf", "--refresh", "makecache"} }
+func (dnfBackend) availability(pkg string) []string {
+	return []string{"dnf", "-q", "repoquery", "--available", "--queryformat", "tailor-package:%{name}\\n", pkg}
+}
+func (dnfBackend) validateAvailability(out string) error {
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, "tailor-package:") && identifier.MatchString(strings.TrimPrefix(line, "tailor-package:")) {
+			return nil
+		}
+	}
+	return fmt.Errorf("no install candidate in configured repositories")
+}
+func (dnfBackend) installed(pkg string) []string {
+	return []string{"rpm", "-q", "--queryformat", "%{NAME}\n", pkg}
+}
+func (dnfBackend) isInstalled(out string) bool { return strings.TrimSpace(out) != "" }
+func (dnfBackend) install(pkgs []string) []string {
+	return append([]string{"dnf", "install", "-y", "--"}, pkgs...)
+}
+func (dnfBackend) validateRepository(f File) error {
+	return fmt.Errorf("adding DNF repositories is not implemented: %q", f.Path)
 }
 
 type initBackend interface {

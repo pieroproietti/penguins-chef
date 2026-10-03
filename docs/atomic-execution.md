@@ -1,7 +1,7 @@
 # Nuovo motore: operazioni verificabili
 
 Questo branch esplora un nuovo modello, separato dalle ricette Wardrobe v2.
-Il primo percorso eseguibile è LightDM su Debian e Arch con systemd; il
+Il primo percorso eseguibile è LightDM su Debian, Arch e Fedora con systemd; il
 traguardo successivo è Colibri completo, inclusi gli accessori.
 
 ## Contratto
@@ -28,6 +28,7 @@ La preparazione dei repository viene sempre ripetuta.
 # Questi comandi non eseguono nemmeno query al gestore pacchetti.
 go run . apply examples/provision/lightdm.yaml --dry-run --family debian --init systemd
 go run . apply examples/provision/lightdm.yaml --dry-run --family archlinux --init systemd
+go run . apply examples/provision/lightdm.yaml --dry-run --family fedora --init systemd
 
 # Prima fetta di Colibri: XFCE, LightDM, browser e integrazione SPICE.
 go run . apply examples/provision/colibri.yaml --dry-run --family archlinux --init systemd
@@ -49,13 +50,18 @@ per ciascuna famiglia; la loro disponibilità viene controllata all'esecuzione.
 ## Scelte iniziali
 
 - Pacchetti e init sono dimensioni separate. I backend iniziali sono APT,
-  pacman e systemd. Devuan con SysV/OpenRC viene rifiutato se la ricetta
+  pacman, DNF e systemd. Devuan con SysV/OpenRC viene rifiutato se la ricetta
   richiede servizi: il supporto APT non implica supporto dell'init.
 - Su Debian la preparazione esegue `apt-get update --error-on=any`.
 - Su Arch esegue **`pacman -Syu --noconfirm`: aggiorna anche il sistema**.
   Non viene mai eseguito `pacman -Sy` da solo, perché gli aggiornamenti
   parziali non sono supportati. Dopo un errore la vestizione si interrompe.
   Riferimento: https://wiki.archlinux.org/title/System_maintenance#Partial_upgrades_are_unsupported
+- Su Fedora esegue `dnf --refresh makecache`, controlla la disponibilità con
+  `dnf repoquery --available`, lo stato installato con `rpm -q` e installa
+  con `dnf install -y`. Usa DNF disponibile nel PATH (anche DNF5); le vecchie
+  installazioni DNF devono fornire `repoquery`. Usa i repository già configurati,
+  senza aggiungerne altri e senza un aggiornamento generale del sistema.
 - I repository già configurati vengono controllati attraverso la disponibilità
   dei pacchetti. L'aggiunta dichiarativa iniziale accetta solo file APT `.list`
   o `.sources` in `/etc/apt/sources.list.d/`. Le chiavi devono essere già
@@ -73,15 +79,43 @@ per ciascuna famiglia; la loro disponibilità viene controllata all'esecuzione.
 
 ## Verifica su macchine reali
 
+## Prova Fedora
+
+Su una VM Fedora tradizionale con systemd (non Silverblue/Kinoite), dalla
+directory del progetto:
+
+```bash
+make test
+go run . apply examples/provision/colibri.yaml --dry-run --family fedora --init systemd
+make build
+sudo /tmp/tailor-build-dir/tailor apply examples/provision/colibri.yaml
+# Ripetere per verificare che pacchetti, file e servizi siano già applicati.
+sudo /tmp/tailor-build-dir/tailor apply examples/provision/colibri.yaml
+rpm -q lightdm lightdm-gtk xfce4-session
+systemctl is-enabled lightdm.service
+```
+
+La ricetta abilita LightDM ma non cambia il target di avvio. Per la prova del
+login grafico, su una VM senza altri display manager abilitati:
+
+```bash
+sudo systemctl set-default graphical.target
+sudo reboot
+```
+
+Se GDM è già abilitato, il conflitto interrompe il piano: non viene disabilitato
+automaticamente. La prova su Fedora reale resta da effettuare; i test simulati
+non certificano il login grafico, la sessione XFCE o il comportamento SELinux.
+
 Il test con runner simulato verifica ordine, fallimenti, postcondizioni e
-riesecuzione. Non certifica il desktop su Debian o Arch. Su VM pulite serve
+riesecuzione. Non certifica il desktop su Debian, Arch o Fedora. Su VM pulite serve
 verificare il piano, applicare la ricetta, rieseguirla, riavviare e controllare
 il login grafico. Provare anche un repository senza il pacchetto richiesto e
 un display manager già abilitato.
 
 ## Passi verso Colibri
 
-1. Verificare LightDM su Debian e Arch reali, fissando la gestione dei conflitti.
+1. Verificare LightDM su Debian, Arch e Fedora reali, fissando la gestione dei conflitti.
 2. Aggiungere XFCE, rete e audio come funzioni separate del costume.
 3. Introdurre composizione delle funzioni senza copie implicite dei profili.
 4. Portare asset, configurazione utente, `base` ed `eggs-dev`.

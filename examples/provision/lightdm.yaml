@@ -23,3 +23,14 @@ profiles:
           greeter-session=lightdm-gtk-greeter
     services:
       - lightdm.service
+  fedora:
+    packages:
+      - lightdm
+      - lightdm-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+    services:
+      - lightdm.service

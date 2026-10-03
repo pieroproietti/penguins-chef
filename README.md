@@ -36,6 +36,7 @@ sudo make install
 
 The `redesign/atomic-execution` branch also provides an experimental `apply`
 command for explicit repository → packages → configuration → init plans.
+The prototype supports APT, pacman and DNF with systemd, with explicit Debian, Arch and Fedora profiles.
 See [the execution model and LightDM example](docs/atomic-execution.md).
 
 ```bash
