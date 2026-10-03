@@ -157,3 +157,27 @@ Su Tumbleweed/Slowroll il profilo LightDM sostituisce il collegamento legacy
 Verifica sia l'abilitazione persistente sia che l'alias selezioni LightDM;
 una seconda applicazione non ripete la modifica. Il servizio attivo non viene
 avviato o fermato: il passaggio avviene al prossimo riavvio.
+
+## Manjaro
+
+Manjaro viene rilevata come famiglia `archlinux`: usa gli stessi profili completi
+LightDM e Colibri e i repository Pacman della macchina. Non serve un backend
+separato. La preparazione esegue `pacman -Syu --noconfirm`, quindi aggiorna anche
+il sistema prima di installare i pacchetti mancanti.
+
+```bash
+tailor apply examples/provision/colibri.yaml --dry-run --family archlinux --init systemd
+sudo tailor apply examples/provision/colibri.yaml
+sudo tailor apply examples/provision/colibri.yaml
+systemctl is-enabled lightdm.service
+systemctl show --property=Id --value display-manager.service
+systemctl get-default
+```
+
+I risultati attesi sono `enabled`, `lightdm.service` e `graphical.target`.
+Il profilo Arch/Manjaro seleziona LightDM sostituendo l'eventuale alias di un
+altro display manager con `systemctl enable --force lightdm.service`, poi
+verifica l'alias. Non ferma il servizio attivo; riavviare per provare il login
+Xfce. La verifica nella VM Manjaro resta da effettuare.
+
+Riferimento: [installazione desktop Manjaro](https://wiki.manjaro.org/index.php?title=Install_Desktop_Environments%2Fen).

@@ -70,7 +70,7 @@ func (p Plan) Describe(w io.Writer) error {
 		}
 		if s.Service != "" {
 			detail = "check/enable/verify " + s.Service + " (no start)"
-			if p.Family == "opensuse" && s.Service == "lightdm.service" {
+			if (p.Family == "opensuse" || p.Family == "archlinux") && s.Service == "lightdm.service" {
 				detail += " (replace display-manager alias)"
 			}
 		}
@@ -207,9 +207,9 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 			return err
 		}
 		check := backend.check(s.Service)
-		// openSUSE may retain the legacy display-manager alias. Selecting
+		// openSUSE and Arch derivatives may retain another display-manager alias. Selecting
 		// LightDM must reconcile that alias even if LightDM is already enabled.
-		replaceDisplayManager := p.Family == "opensuse" && s.Service == "lightdm.service"
+		replaceDisplayManager := (p.Family == "opensuse" || p.Family == "archlinux") && s.Service == "lightdm.service"
 		aliasCheck := []string{"systemctl", "show", "--property=Id", "--value", "display-manager.service"}
 		aliasMatches := func() (bool, error) {
 			if !replaceDisplayManager {

@@ -1,6 +1,10 @@
 package distro
 
-import "testing"
+import (
+	"github.com/pieroproietti/penguins-tailor/pkg/provision"
+	"os"
+	"testing"
+)
 
 func TestIdentityUsesCodenameAndReleaseFallback(t *testing.T) {
 	tests := []struct {
@@ -31,5 +35,32 @@ func TestOpenSUSEFamilyDetection(t *testing.T) {
 	}
 	if d := distroFromRelease(map[string]string{"ID": "derivative", "ID_LIKE": "opensuse suse"}); d.FamilyID != "opensuse" {
 		t.Fatal("ID_LIKE detection failed")
+	}
+}
+
+func TestManjaroSelectsArchDesktopProfiles(t *testing.T) {
+	for _, like := range []string{"", "arch"} {
+		d := distroFromRelease(map[string]string{"ID": "manjaro", "ID_LIKE": like, "VERSION_ID": "26.0"})
+		if d.FamilyID != "archlinux" || d.DistroID != "manjaro" {
+			t.Fatalf("unexpected identity: %+v", d)
+		}
+		for _, name := range []string{"lightdm", "colibri"} {
+			f, err := os.Open("../../examples/provision/" + name + ".yaml")
+			if err != nil {
+				t.Fatal(err)
+			}
+			recipe, err := provision.Load(f)
+			f.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+			plan, err := provision.Build(recipe, d.FamilyID, "systemd")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(plan.Steps) == 0 || plan.Steps[0].Command[0] != "pacman" {
+				t.Fatal("Manjaro did not select pacman")
+			}
+		}
 	}
 }

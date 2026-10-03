@@ -172,7 +172,7 @@ func TestExecutionOrderAndResume(t *testing.T) {
 				return -1
 			}
 			enable := "systemctl enable lightdm.service"
-			if family == "opensuse" {
+			if family == "opensuse" || family == "archlinux" {
 				enable = "systemctl enable --force lightdm.service"
 			}
 			if index(install) <= 2 || index(enable) <= index(install) {
@@ -475,34 +475,36 @@ func TestZypperAvailabilityRequiresRepositoryPackage(t *testing.T) {
 	}
 }
 
-func TestOpenSUSEDisplayManagerAlias(t *testing.T) {
-	for _, enabled := range []bool{false, true} {
-		for _, broken := range []bool{false, true} {
-			p := Plan{Family: "opensuse", Init: "systemd", Steps: []Step{{ID: "service:lightdm.service", Service: "lightdm.service"}, {ID: "default-target", DefaultTarget: "graphical.target"}}}
-			r := &fakeRunner{enabled: enabled, displayManager: "display-manager-legacy.service", brokenAlias: broken, defaultTarget: "multi-user.target"}
-			err := p.Execute(context.Background(), r, io.Discard)
-			if broken {
-				if err == nil {
-					t.Fatal("accepted incorrect alias")
+func TestDisplayManagerAliasReconciliation(t *testing.T) {
+	for _, family := range []string{"opensuse", "archlinux"} {
+		for _, enabled := range []bool{false, true} {
+			for _, broken := range []bool{false, true} {
+				p := Plan{Family: family, Init: "systemd", Steps: []Step{{ID: "service:lightdm.service", Service: "lightdm.service"}, {ID: "default-target", DefaultTarget: "graphical.target"}}}
+				r := &fakeRunner{enabled: enabled, displayManager: "display-manager-legacy.service", brokenAlias: broken, defaultTarget: "multi-user.target"}
+				err := p.Execute(context.Background(), r, io.Discard)
+				if broken {
+					if err == nil {
+						t.Fatal("accepted incorrect alias")
+					}
+					if r.defaultTarget != "multi-user.target" {
+						t.Fatal("changed target after failed alias verification")
+					}
+					continue
 				}
-				if r.defaultTarget != "multi-user.target" {
-					t.Fatal("changed target after failed alias verification")
+				if err != nil {
+					t.Fatal(err)
 				}
-				continue
-			}
-			if err != nil {
-				t.Fatal(err)
-			}
-			if r.displayManager != "lightdm.service" {
-				t.Fatal("legacy alias retained")
-			}
-			r.events = nil
-			if err := p.Execute(context.Background(), r, io.Discard); err != nil {
-				t.Fatal(err)
-			}
-			for _, event := range r.events {
-				if strings.Contains(event, " enable ") {
-					t.Fatal("repeated enable")
+				if r.displayManager != "lightdm.service" {
+					t.Fatal("legacy alias retained")
+				}
+				r.events = nil
+				if err := p.Execute(context.Background(), r, io.Discard); err != nil {
+					t.Fatal(err)
+				}
+				for _, event := range r.events {
+					if strings.Contains(event, " enable ") {
+						t.Fatal("repeated enable")
+					}
 				}
 			}
 		}
