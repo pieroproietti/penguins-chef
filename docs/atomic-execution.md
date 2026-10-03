@@ -215,3 +215,15 @@ locale originale non viene modificato.
 
 `sysroot/etc/skel` configura i nuovi utenti attraverso `/etc/skel`; le home
 degli utenti già esistenti non vengono sincronizzate automaticamente.
+
+Il profilo openSUSE include anche `pipewire`, `pipewire-pulseaudio` e
+`wireplumber`: il plugin Xfce del volume ha così un server audio compatibile
+PulseAudio. I servizi audio appartengono alla sessione utente; non vengono
+aggiunti alla lista dei servizi di sistema della ricetta. Dopo un nuovo login
+si può controllare la sessione con:
+
+```bash
+systemctl --user status pipewire.socket pipewire-pulse.socket wireplumber.service
+```
+
+Riferimento: https://doc.opensuse.org/documentation/tumbleweed/pipewire/

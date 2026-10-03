@@ -86,6 +86,9 @@ profiles:
       - xfce4-terminal
       - xfce4-whiskermenu-plugin
       - xfce4-pulseaudio-plugin
+      - pipewire
+      - pipewire-pulseaudio
+      - wireplumber
       - xfdesktop
       - xfwm4
       - thunar
