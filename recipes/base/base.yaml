@@ -65,7 +65,7 @@ profiles:
     packages:
       - sudo
       - curl
-      - wget
+      - wget2-wget
       - git
       - ca-certificates
       - nano
