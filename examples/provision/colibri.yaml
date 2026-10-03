@@ -8,6 +8,8 @@ profiles:
       - xserver-xorg
       - xfce4
       - xfce4-terminal
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
       - lightdm
       - lightdm-gtk-greeter
       - fonts-dejavu-core
@@ -29,6 +31,8 @@ profiles:
       - xfce4-panel
       - xfce4-settings
       - xfce4-terminal
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
       - xfdesktop
       - xfwm4
       - thunar
@@ -53,6 +57,8 @@ profiles:
       - xfce4-panel
       - xfce4-settings
       - xfce4-terminal
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
       - xfdesktop
       - xfwm4
       - Thunar
@@ -77,6 +83,8 @@ profiles:
       - xfce4-panel
       - xfce4-settings
       - xfce4-terminal
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
       - xfdesktop
       - xfwm4
       - thunar

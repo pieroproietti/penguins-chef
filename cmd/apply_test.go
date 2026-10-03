@@ -15,6 +15,10 @@ func TestApplyDryRunDoesNotExecuteOrWrite(t *testing.T) {
 		t.Run(family, func(t *testing.T) {
 			dir := t.TempDir()
 			target := filepath.Join(dir, "never-created")
+			sysroot := filepath.Join(dir, "sysroot")
+			if err := os.Mkdir(sysroot, 0755); err != nil {
+				t.Fatal(err)
+			}
 			recipe := filepath.Join(dir, "recipe.yaml")
 			text := "version: 1\nname: test\nprofiles:\n  " + family + ":\n    packages: [lightdm]\n    files:\n      - path: " + target + "\n        content: test\n    services: [lightdm.service]\n"
 			if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
@@ -23,11 +27,11 @@ func TestApplyDryRunDoesNotExecuteOrWrite(t *testing.T) {
 			cmd := applyCmd()
 			var out bytes.Buffer
 			cmd.SetOut(&out)
-			cmd.SetArgs([]string{recipe, "--dry-run", "--family", family, "--init", "systemd"})
+			cmd.SetArgs([]string{recipe, "--dry-run", "--family", family, "--init", "systemd", "--sysroot", sysroot})
 			if err := cmd.Execute(); err != nil {
 				t.Fatal(err)
 			}
-			if !strings.Contains(out.String(), "[init]") {
+			if !strings.Contains(out.String(), "[init]") || !strings.Contains(out.String(), "sysroot:copy") {
 				t.Fatalf("incomplete plan: %s", out.String())
 			}
 			if _, err := os.Stat(target); !os.IsNotExist(err) {

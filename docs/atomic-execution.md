@@ -181,3 +181,34 @@ verifica l'alias. Non ferma il servizio attivo; riavviare per provare il login
 Xfce. La verifica nella VM Manjaro resta da effettuare.
 
 Riferimento: [installazione desktop Manjaro](https://wiki.manjaro.org/index.php?title=Install_Desktop_Environments%2Fen).
+
+## Colibri: Whisker Menu e sysroot completo
+
+Tutti i profili Colibri installano `xfce4-whiskermenu-plugin` e
+`xfce4-pulseaudio-plugin`, usati dal pannello del costume. Per applicare anche
+gli asset completi del costume locale:
+
+```bash
+tailor apply examples/provision/colibri.yaml --dry-run \
+  --sysroot "$HOME/.wardrobe/v2/costumes/colibri/sysroot"
+sudo tailor apply examples/provision/colibri.yaml \
+  --sysroot "$HOME/.wardrobe/v2/costumes/colibri/sysroot"
+```
+
+Il percorso viene espanso dalla shell prima di `sudo`; può puntare anche al
+sysroot di un altro checkout Wardrobe. `apply` non scarica gli asset. `rsync`
+deve essere già disponibile prima dell'esecuzione.
+
+La copia dell'intero contenuto avviene dopo la configurazione e prima dei
+servizi. Comprende file nascosti, binari e collegamenti simbolici e conserva
+permessi, proprietari, ACL e attributi estesi. Non elimina file estranei. Il
+confronto usa checksum anche per file con dimensione e data identiche; dopo
+la copia una seconda verifica deve risultare senza differenze. Gli attributi
+della directory sysroot stessa non vengono applicati alla radice `/`.
+Sorgenti mancanti o tipi speciali di file interrompono il piano prima dei
+pacchetti. La simulazione mostra l'operazione senza eseguire rsync.
+
+`sysroot/etc/skel` viene copiato in `/etc/skel`: configura i nuovi utenti.
+Questo percorso non sincronizza automaticamente le home degli utenti già
+esistenti. Gli asset restano nel checkout Wardrobe, senza essere incorporati
+nel repository di Tailor o nel pacchetto.

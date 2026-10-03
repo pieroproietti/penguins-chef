@@ -27,6 +27,7 @@ type Step struct {
 	File          *File
 	DefaultTarget string
 	Service       string
+	Sysroot       string
 }
 
 type Runner interface {
@@ -77,6 +78,9 @@ func (p Plan) Describe(w io.Writer) error {
 		if s.DefaultTarget != "" {
 			detail = "check/set-default/verify " + s.DefaultTarget + " (next boot)"
 		}
+		if s.Sysroot != "" {
+			detail = "check/copy/verify " + s.Sysroot + " -> / (archive, ACLs, xattrs; no deletion)"
+		}
 		if _, err := fmt.Fprintf(w, "[%s] %s: %s\n", s.Phase, s.ID, detail); err != nil {
 			return err
 		}
@@ -89,6 +93,11 @@ func (p Plan) Describe(w io.Writer) error {
 func (p Plan) Execute(ctx context.Context, r Runner, w io.Writer) error {
 	// Reject unsuitable destinations before repository/package operations.
 	for _, s := range p.Steps {
+		if s.Sysroot != "" {
+			if err := validateSysroot(s.Sysroot); err != nil {
+				return fmt.Errorf("%s preflight: %w", s.ID, err)
+			}
+		}
 		if s.File != nil {
 			if err := regularPath(s.File.Path); err != nil {
 				return fmt.Errorf("%s preflight: %w", s.ID, err)
@@ -127,6 +136,9 @@ func (p Plan) installed(ctx context.Context, r Runner, pkg string) (bool, error)
 }
 
 func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
+	if s.Sysroot != "" {
+		return reconcileSysroot(ctx, r, s.Sysroot, "/")
+	}
 	if len(s.Command) > 0 {
 		return r.Run(ctx, s.Command)
 	}

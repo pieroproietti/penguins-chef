@@ -12,7 +12,7 @@ import (
 
 func applyCmd() *cobra.Command {
 	var dryRun bool
-	var family, initSystem string
+	var family, initSystem, sysroot string
 	cmd := &cobra.Command{
 		Use:   "apply <recipe.yaml>",
 		Short: "Apply an experimental operation-based recipe",
@@ -45,6 +45,11 @@ func applyCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if sysroot != "" {
+				if err := plan.AddSysroot(sysroot); err != nil {
+					return err
+				}
+			}
 			if err := plan.Describe(cmd.OutOrStdout()); err != nil {
 				return err
 			}
@@ -68,6 +73,9 @@ func applyCmd() *cobra.Command {
 			if targetInit == "systemd" {
 				tools = append(tools, "systemctl")
 			}
+			if sysroot != "" {
+				tools = append(tools, "rsync")
+			}
 			for _, tool := range tools {
 				if _, err := exec.LookPath(tool); err != nil {
 					return err
@@ -79,5 +87,6 @@ func applyCmd() *cobra.Command {
 	cmd.Flags().BoolVarP(&dryRun, "dry-run", "n", false, "Print the plan without executing commands or writing files")
 	cmd.Flags().StringVar(&family, "family", "", "Preview a package family: debian, archlinux, fedora or opensuse (dry-run only)")
 	cmd.Flags().StringVar(&initSystem, "init", "", "Preview an init system: systemd (dry-run only)")
+	cmd.Flags().StringVar(&sysroot, "sysroot", "", "Copy the contents of a local sysroot directory to /, preserving archive metadata, ACLs and xattrs")
 	return cmd
 }
