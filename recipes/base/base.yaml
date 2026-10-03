@@ -75,7 +75,6 @@ profiles:
       - usbutils
       - bzip2
       - xz
-      - systemd-timesyncd
     files:
       - path: /etc/profile.d/00-tailor-base.sh
         content: |
@@ -105,7 +104,6 @@ profiles:
       - usbutils
       - bzip2
       - xz
-      - systemd-timesyncd
     files:
       - path: /etc/profile.d/00-tailor-base.sh
         content: |
