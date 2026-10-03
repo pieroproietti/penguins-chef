@@ -20,7 +20,7 @@ func TestApplyDryRunDoesNotExecuteOrWrite(t *testing.T) {
 				t.Fatal(err)
 			}
 			recipe := filepath.Join(dir, "recipe.yaml")
-			text := "version: 1\nname: test\nprofiles:\n  " + family + ":\n    packages: [lightdm]\n    files:\n      - path: " + target + "\n        content: test\n    services: [lightdm.service]\n"
+			text := "version: 1\nname: test\nsysroot: missing-default\nprofiles:\n  " + family + ":\n    packages: [lightdm]\n    files:\n      - path: " + target + "\n        content: test\n    services: [lightdm.service]\n"
 			if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
 				t.Fatal(err)
 			}

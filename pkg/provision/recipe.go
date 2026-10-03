@@ -4,6 +4,7 @@ package provision
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -17,6 +18,8 @@ type Recipe struct {
 	Version  int                `yaml:"version"`
 	Name     string             `yaml:"name"`
 	Profiles map[string]Profile `yaml:"profiles"`
+	Sysroot  string             `yaml:"sysroot"`
+	baseDir  string
 }
 
 type Profile struct {
@@ -45,6 +48,13 @@ func Load(r io.Reader) (Recipe, error) {
 	}
 	if recipe.Version != 1 || strings.TrimSpace(recipe.Name) == "" || len(recipe.Profiles) == 0 {
 		return recipe, fmt.Errorf("recipe requires version: 1, a name and profiles")
+	}
+	if f, ok := r.(*os.File); ok {
+		var err error
+		recipe.baseDir, err = filepath.Abs(filepath.Dir(f.Name()))
+		if err != nil {
+			return recipe, err
+		}
 	}
 	return recipe, nil
 }
@@ -123,6 +133,18 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 	}
 	if profile.DefaultTarget != "" {
 		plan.Steps = append(plan.Steps, Step{ID: "default-target:" + profile.DefaultTarget, Phase: "init", DefaultTarget: profile.DefaultTarget})
+	}
+	if recipe.Sysroot != "" {
+		source := recipe.Sysroot
+		if !filepath.IsAbs(source) {
+			if recipe.baseDir == "" {
+				return plan, fmt.Errorf("relative sysroot requires loading the recipe from a file")
+			}
+			source = filepath.Join(recipe.baseDir, source)
+		}
+		if err := plan.AddSysroot(source); err != nil {
+			return plan, err
+		}
 	}
 	return plan, nil
 }

@@ -41,6 +41,9 @@ func applyCmd() *cobra.Command {
 					targetInit = "systemd"
 				}
 			}
+			if sysroot != "" {
+				recipe.Sysroot = "" // The explicit CLI source overrides the recipe default.
+			}
 			plan, err := provision.Build(recipe, targetFamily, targetInit)
 			if err != nil {
 				return err
@@ -73,8 +76,11 @@ func applyCmd() *cobra.Command {
 			if targetInit == "systemd" {
 				tools = append(tools, "systemctl")
 			}
-			if sysroot != "" {
-				tools = append(tools, "rsync")
+			for _, step := range plan.Steps {
+				if step.Sysroot != "" {
+					tools = append(tools, "rsync")
+					break
+				}
 			}
 			for _, tool := range tools {
 				if _, err := exec.LookPath(tool); err != nil {

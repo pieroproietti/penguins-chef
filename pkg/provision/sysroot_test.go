@@ -110,6 +110,44 @@ func (r brokenOverlayRunner) Run(context.Context, []string) error {
 	return nil
 }
 
+type ownershipRunner struct {
+	queries  int
+	commands [][]string
+}
+
+func (r *ownershipRunner) Output(_ context.Context, args []string) (string, error) {
+	r.commands = append(r.commands, args)
+	r.queries++
+	if r.queries == 1 {
+		return ">f+++++++++\n", nil
+	}
+	return "", nil
+}
+func (r *ownershipRunner) Run(_ context.Context, args []string) error {
+	r.commands = append(r.commands, args)
+	return nil
+}
+
+func TestSystemSysrootUsesRootOwnership(t *testing.T) {
+	source := t.TempDir()
+	if err := os.WriteFile(filepath.Join(source, "file"), []byte("test"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	r := &ownershipRunner{}
+	// The fake runner records commands without accessing the real system root.
+	if err := reconcileSysroot(context.Background(), r, source, "/"); err != nil {
+		t.Fatal(err)
+	}
+	if len(r.commands) != 3 {
+		t.Fatal("missing copy or verification")
+	}
+	for _, args := range r.commands {
+		if !strings.Contains(strings.Join(args, " "), "--chown=0:0") {
+			t.Fatal("checkout ownership would be copied to system")
+		}
+	}
+}
+
 func TestSysrootFailuresAndPreflight(t *testing.T) {
 	source := t.TempDir()
 	if err := os.WriteFile(filepath.Join(source, "file"), []byte("test"), 0644); err != nil {
@@ -150,5 +188,89 @@ func TestSysrootInsertedBeforeInit(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "sysroot:copy") {
 		t.Fatal("overlay missing from preview")
+	}
+}
+
+func TestRecipeSysrootResolvedRelativeToRecipe(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(dir, "assets"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "recipe.yaml")
+	if err := os.WriteFile(path, []byte("version: 1\nname: test\nsysroot: assets\nprofiles: {fedora: {}}\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(t.TempDir())
+	plan, err := Build(recipe, "fedora", "systemd")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(plan.Steps) != 1 || plan.Steps[0].Sysroot != filepath.Join(dir, "assets") {
+		t.Fatal("sysroot resolved against working directory")
+	}
+	if err := os.Remove(filepath.Join(dir, "assets")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Build(recipe, "fedora", "systemd"); err == nil {
+		t.Fatal("accepted missing recipe sysroot")
+	}
+}
+
+func TestPublicColibriSysrootContainsOnlyReviewedAssets(t *testing.T) {
+	root := "../../examples/provision/colibri/sysroot"
+	allowed := map[string]bool{
+		"etc/modules-load.d/uinput.conf": true,
+		"etc/skel/.bashrc":               true, "etc/skel/.bash_logout": true, "etc/skel/.profile": true,
+		"etc/skel/.config/xfce4/terminal/accels.scm":                true,
+		"etc/skel/.config/xfce4/terminal/terminalrc":                true,
+		"usr/share/backgrounds/colibri/3794764350_2839ca0b26_b.jpg": true,
+		"usr/share/backgrounds/colibri/credits.md":                  true,
+	}
+	for _, name := range []string{"xsettings", "thunar", "xfce4-desktop", "xfwm4", "xfce4-terminal", "xfce4-keyboard-shortcuts", "xfce4-session", "xfce4-notifyd", "keyboards", "xfce4-panel"} {
+		allowed["etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/"+name+".xml"] = true
+	}
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		if !allowed[filepath.ToSlash(rel)] {
+			t.Errorf("unreviewed public sysroot asset: %s", rel)
+		}
+		delete(allowed, filepath.ToSlash(rel))
+		if strings.HasSuffix(path, ".jpg") {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		for _, private := range []string{"/home/", "/root/", `name="recent"`, `name="known-legacy-items"`, "colibri-wallpapers/"} {
+			if strings.Contains(string(data), private) {
+				t.Errorf("private or stale state in %s: %s", rel, private)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(allowed) != 0 {
+		t.Fatalf("missing public assets: %v", allowed)
 	}
 }

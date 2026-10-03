@@ -79,7 +79,14 @@ func reconcileSysroot(ctx context.Context, r Runner, source, target string) erro
 		paths = append(paths, filepath.Join(source, entry.Name()))
 	}
 	paths = append(paths, strings.TrimRight(target, "/")+"/")
-	check := append([]string{"rsync", "-aAXc", "--dry-run", "--itemize-changes", "--out-format=%i", "--"}, paths...)
+	options := []string{"rsync", "-aAXc"}
+	if target == "/" {
+		// Git does not store ownership: a user's checkout must not chown /etc
+		// or /usr to that user when installing public system assets.
+		options = append(options, "--chown=0:0")
+	}
+	check := append(append([]string{}, options...), "--dry-run", "--itemize-changes", "--out-format=%i", "--")
+	check = append(check, paths...)
 	out, err := r.Output(ctx, check)
 	if err != nil {
 		return err
@@ -87,7 +94,8 @@ func reconcileSysroot(ctx context.Context, r Runner, source, target string) erro
 	if strings.TrimSpace(out) == "" {
 		return nil
 	}
-	if err := r.Run(ctx, append([]string{"rsync", "-aAXc", "--"}, paths...)); err != nil {
+	copyCommand := append(append([]string{}, options...), "--")
+	if err := r.Run(ctx, append(copyCommand, paths...)); err != nil {
 		return err
 	}
 	out, err = r.Output(ctx, check)

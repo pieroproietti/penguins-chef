@@ -1,7 +1,8 @@
-# First Colibri desktop slice, not a replacement for the full Wardrobe costume.
-# Networking, audio, branding, user assets, base and eggs-dev will follow.
+# Colibri desktop with reviewed public defaults and artwork.
+# Networking, the audio stack, base and eggs-dev remain separate.
 version: 1
 name: colibri-desktop
+sysroot: colibri/sysroot
 profiles:
   debian:
     packages:

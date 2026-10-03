@@ -182,33 +182,36 @@ Xfce. La verifica nella VM Manjaro resta da effettuare.
 
 Riferimento: [installazione desktop Manjaro](https://wiki.manjaro.org/index.php?title=Install_Desktop_Environments%2Fen).
 
-## Colibri: Whisker Menu e sysroot completo
+## Colibri: Whisker Menu e sysroot pubblico
 
-Tutti i profili Colibri installano `xfce4-whiskermenu-plugin` e
-`xfce4-pulseaudio-plugin`, usati dal pannello del costume. Per applicare anche
-gli asset completi del costume locale:
+La ricetta `examples/provision/colibri.yaml` dichiara
+`sysroot: colibri/sysroot`, risolto rispetto alla directory della ricetta,
+anche quando il comando viene eseguito da un'altra directory. Il sysroot
+ripulito è versionato insieme agli esempi: non serve un checkout Wardrobe.
 
 ```bash
-tailor apply examples/provision/colibri.yaml --dry-run \
-  --sysroot "$HOME/.wardrobe/v2/costumes/colibri/sysroot"
-sudo tailor apply examples/provision/colibri.yaml \
-  --sysroot "$HOME/.wardrobe/v2/costumes/colibri/sysroot"
+tailor apply examples/provision/colibri.yaml --dry-run
+sudo tailor apply examples/provision/colibri.yaml
 ```
 
-Il percorso viene espanso dalla shell prima di `sudo`; può puntare anche al
-sysroot di un altro checkout Wardrobe. `apply` non scarica gli asset. `rsync`
-deve essere già disponibile prima dell'esecuzione.
+`rsync` deve essere disponibile. `--sysroot /percorso/sysroot` sostituisce la
+sorgente dichiarata nella ricetta, se si desidera usare un costume locale.
+Tutti i profili installano Whisker Menu e il plugin PulseAudio del pannello.
 
-La copia dell'intero contenuto avviene dopo la configurazione e prima dei
-servizi. Comprende file nascosti, binari e collegamenti simbolici e conserva
-permessi, proprietari, ACL e attributi estesi. Non elimina file estranei. Il
-confronto usa checksum anche per file con dimensione e data identiche; dopo
-la copia una seconda verifica deve risultare senza differenze. Gli attributi
-della directory sysroot stessa non vengono applicati alla radice `/`.
-Sorgenti mancanti o tipi speciali di file interrompono il piano prima dei
-pacchetti. La simulazione mostra l'operazione senza eseguire rsync.
+La copia avviene dopo la configurazione e prima dei servizi. Comprende file
+nascosti, binari e collegamenti; conserva permessi, ACL e attributi estesi.
+La proprietà dei file di sistema è normalizzata a root, indipendentemente
+dall'utente che ha clonato Git. Non elimina file estranei. Confronta checksum
+prima della copia e verifica l'assenza di differenze dopo. La directory sorgente
+stessa non modifica gli attributi della radice `/`. Sorgenti mancanti o tipi
+speciali di file vengono rifiutati prima dei pacchetti. La simulazione non
+esegue rsync.
 
-`sysroot/etc/skel` viene copiato in `/etc/skel`: configura i nuovi utenti.
-Questo percorso non sincronizza automaticamente le home degli utenti già
-esistenti. Gli asset restano nel checkout Wardrobe, senza essere incorporati
-nel repository di Tailor o nel pacchetto.
+Gli asset pubblici includono le impostazioni Xfce, i file shell predefiniti,
+la configurazione uinput e lo sfondo con i crediti originali. Sono esclusi
+l'intero profilo Firefox, cache, cronologie, credenziali, stato dei monitor,
+elenco delle applicazioni recenti e metadati EXIF dello sfondo. Il sysroot
+locale originale non viene modificato.
+
+`sysroot/etc/skel` configura i nuovi utenti attraverso `/etc/skel`; le home
+degli utenti già esistenti non vengono sincronizzate automaticamente.

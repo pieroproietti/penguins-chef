@@ -18,3 +18,14 @@ docs/md/
 .DS_Store
 .vscode/
 .idea/
+
+# Public sysroots must not contain browser profiles or personal runtime data.
+**/sysroot/**/.mozilla/
+**/sysroot/**/.cache/
+**/sysroot/**/.ssh/
+**/sysroot/**/.gnupg/
+**/sysroot/**/.local/share/keyrings/
+**/sysroot/**/.bash_history
+**/sysroot/**/.zsh_history
+**/sysroot/**/*.sqlite*
+**/sysroot/**/sessionstore*
