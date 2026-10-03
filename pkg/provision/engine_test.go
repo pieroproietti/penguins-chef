@@ -79,6 +79,17 @@ func (r *fakeRunner) Run(_ context.Context, args []string) error {
 		}
 		return nil
 	}
+	if args[0] == "dnf" && args[1] == "install" {
+		for _, pkg := range args[3:] {
+			if pkg == "--" {
+				return errors.New("unknown argument -- for dnf install")
+			}
+			if !r.brokenInstall {
+				r.installed[pkg] = true
+			}
+		}
+		return nil
+	}
 	for i, arg := range args {
 		if arg == "--" && !r.brokenInstall {
 			for _, pkg := range args[i+1:] {
@@ -121,7 +132,7 @@ func TestExecutionOrderAndResume(t *testing.T) {
 			}
 			if family == "fedora" {
 				prepare = "dnf --refresh makecache"
-				install = "dnf install -y -- lightdm greeter"
+				install = "dnf install -y lightdm greeter"
 			}
 			if r.events[0] != prepare {
 				t.Fatalf("first operation: %v", r.events)
@@ -173,6 +184,9 @@ func TestFailuresStopDependentOperations(t *testing.T) {
 					r.unavailable = "greeter"
 				case "install":
 					r.failRun = " -- "
+					if family == "fedora" {
+						r.failRun = "dnf install "
+					}
 				case "postcondition":
 					r.brokenInstall = true
 				case "query":

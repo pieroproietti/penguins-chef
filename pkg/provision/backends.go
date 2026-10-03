@@ -102,7 +102,8 @@ func (dnfBackend) installed(pkg string) []string {
 }
 func (dnfBackend) isInstalled(out string) bool { return strings.TrimSpace(out) != "" }
 func (dnfBackend) install(pkgs []string) []string {
-	return append([]string{"dnf", "install", "-y", "--"}, pkgs...)
+	// DNF5 rejects the end-of-options separator for install.
+	return append([]string{"dnf", "install", "-y"}, pkgs...)
 }
 func (dnfBackend) validateRepository(f File) error {
 	return fmt.Errorf("adding DNF repositories is not implemented: %q", f.Path)
