@@ -142,8 +142,15 @@ func TestSystemSysrootUsesRootOwnership(t *testing.T) {
 		t.Fatal("missing copy or verification")
 	}
 	for _, args := range r.commands {
-		if !strings.Contains(strings.Join(args, " "), "--chown=0:0") {
+		cmdStr := strings.Join(args, " ")
+		if !strings.Contains(cmdStr, "--chown=0:0") {
 			t.Fatal("checkout ownership would be copied to system")
+		}
+		if !strings.Contains(cmdStr, "--chmod=D0755,Fgo-w") {
+			t.Fatal("missing permissions normalization for system root")
+		}
+		if !strings.Contains(cmdStr, "--no-xattrs") {
+			t.Fatal("user checkout xattrs would be copied to system root")
 		}
 	}
 }

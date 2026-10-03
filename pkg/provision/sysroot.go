@@ -81,9 +81,10 @@ func reconcileSysroot(ctx context.Context, r Runner, source, target string) erro
 	paths = append(paths, strings.TrimRight(target, "/")+"/")
 	options := []string{"rsync", "-aAXc"}
 	if target == "/" {
-		// Git does not store ownership: a user's checkout must not chown /etc
-		// or /usr to that user when installing public system assets.
-		options = append(options, "--chown=0:0")
+		// Git does not store ownership, directory permissions or system SELinux labels:
+		// a user's checkout must not chown /etc or /usr to that user, nor make them
+		// group-writable (0775), nor copy local user xattrs (user_home_t) onto system files.
+		options = append(options, "--chown=0:0", "--chmod=D0755,Fgo-w", "--no-xattrs")
 	}
 	check := append(append([]string{}, options...), "--dry-run", "--itemize-changes", "--out-format=%i", "--")
 	check = append(check, paths...)
