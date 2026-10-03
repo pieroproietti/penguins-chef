@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -279,5 +280,67 @@ func TestPublicColibriSysrootContainsOnlyReviewedAssets(t *testing.T) {
 	}
 	if len(allowed) != 0 {
 		t.Fatalf("missing public assets: %v", allowed)
+	}
+}
+
+func TestSysrootReplicatesSkelToCurrentUser(t *testing.T) {
+	if _, err := exec.LookPath("rsync"); err != nil {
+		t.Skip("rsync unavailable")
+	}
+	source := t.TempDir()
+	skel := filepath.Join(source, "etc", "skel")
+	if err := os.MkdirAll(filepath.Join(skel, ".config", "xfce4"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skel, ".bashrc"), []byte("echo tailor-test"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(skel, ".config", "xfce4", "panel.xml"), []byte("<panel/>"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	tempHome := t.TempDir()
+	if err := os.Chmod(tempHome, 0700); err != nil {
+		t.Fatal(err)
+	}
+
+	u, err := user.Current()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("TAILOR_USER", u.Username)
+	t.Setenv("TAILOR_USER_HOME", tempHome)
+
+	r := HostRunner{Out: io.Discard, Err: io.Discard}
+	ctx := context.Background()
+	if err := replicateSkelToCurrentUser(ctx, r, source); err != nil {
+		t.Fatal(err)
+	}
+
+	bashrc, err := os.ReadFile(filepath.Join(tempHome, ".bashrc"))
+	if err != nil || string(bashrc) != "echo tailor-test" {
+		t.Fatalf("unexpected .bashrc: %s, %v", string(bashrc), err)
+	}
+	panel, err := os.ReadFile(filepath.Join(tempHome, ".config", "xfce4", "panel.xml"))
+	if err != nil || string(panel) != "<panel/>" {
+		t.Fatalf("unexpected panel.xml: %s, %v", string(panel), err)
+	}
+
+	homeInfo, err := os.Stat(tempHome)
+	if err != nil || homeInfo.Mode().Perm() != 0700 {
+		t.Fatalf("home directory permissions modified: %v", homeInfo.Mode())
+	}
+	configInfo, err := os.Stat(filepath.Join(tempHome, ".config"))
+	if err != nil || configInfo.Mode().Perm() != 0755 {
+		t.Fatalf(".config permissions: %v", configInfo.Mode())
+	}
+	bashrcInfo, err := os.Stat(filepath.Join(tempHome, ".bashrc"))
+	if err != nil || bashrcInfo.Mode().Perm() != 0644 {
+		t.Fatalf(".bashrc permissions: %v", bashrcInfo.Mode())
+	}
+
+	// Idempotency: re-running should succeed without errors
+	if err := replicateSkelToCurrentUser(ctx, r, source); err != nil {
+		t.Fatalf("idempotent re-run failed: %v", err)
 	}
 }

@@ -211,8 +211,10 @@ l'intero profilo Firefox, cache, cronologie, credenziali, stato dei monitor,
 elenco delle applicazioni recenti e metadati EXIF dello sfondo. Il sysroot
 locale originale non viene modificato.
 
-`sysroot/etc/skel` configura i nuovi utenti attraverso `/etc/skel`; le home
-degli utenti già esistenti non vengono sincronizzate automaticamente.
+`sysroot/etc/skel` configura i nuovi utenti attraverso `/etc/skel` e viene
+automaticamente replicato nella home dell'utente corrente (rilevato da
+`SUDO_USER`, `DOAS_USER` o `TAILOR_USER`), preservando i permessi della home
+e assegnando ownership e permessi corretti (`0755`/`0644`).
 
 Il profilo openSUSE include anche `pipewire`, `pipewire-pulseaudio` e
 `wireplumber`: il plugin Xfce del volume ha così un server audio compatibile
