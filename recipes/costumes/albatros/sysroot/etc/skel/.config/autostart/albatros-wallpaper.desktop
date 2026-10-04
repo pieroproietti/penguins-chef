@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Albatros Wallpaper
+Exec=/usr/bin/plasma-apply-wallpaperimage /usr/share/backgrounds/albatros/Diomedea_exulans_in_flight_-_SE_Tasmania.jpg
+OnlyShowIn=KDE;
+X-KDE-AutostartEnabled=true
