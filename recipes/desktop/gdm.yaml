@@ -1,0 +1,31 @@
+version: 1
+name: gdm
+
+profiles:
+  debian:
+    packages:
+      - gdm3
+    default_target: graphical.target
+    services:
+      - gdm3.service
+
+  archlinux:
+    packages:
+      - gdm
+    default_target: graphical.target
+    services:
+      - gdm.service
+
+  fedora:
+    packages:
+      - gdm
+    default_target: graphical.target
+    services:
+      - gdm.service
+
+  opensuse:
+    packages:
+      - gdm
+    default_target: graphical.target
+    services:
+      - gdm.service

@@ -1,0 +1,54 @@
+version: 1
+name: gnome-desktop
+
+include:
+  - ../base/base.yaml
+  - gdm.yaml
+
+profiles:
+  debian:
+    packages:
+      - gnome-core
+      - gnome-shell-extension-dash-to-panel
+      - gnome-terminal
+      - firefox-esr
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+
+  archlinux:
+    packages:
+      - gnome-shell
+      - nautilus
+      - gnome-control-center
+      - gnome-terminal
+      - gnome-shell-extension-dash-to-panel
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+
+  fedora:
+    packages:
+      - gnome-shell
+      - nautilus
+      - gnome-control-center
+      - gnome-terminal
+      - gnome-shell-extension-dash-to-panel
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+
+  opensuse:
+    packages:
+      - patterns-gnome-gnome_basic
+      - gnome-shell
+      - nautilus
+      - gnome-control-center
+      - gnome-terminal
+      - extension-manager
+      - MozillaFirefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk

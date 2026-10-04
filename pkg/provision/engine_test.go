@@ -930,4 +930,38 @@ func TestDuckRecipeHasHostnameAndBuilds(t *testing.T) {
 	}
 }
 
+func TestEagleRecipeHasHostnameAndBuilds(t *testing.T) {
+	path := "../../recipes/costumes/eagle/eagle.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open eagle.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load eagle.yaml: %v", err)
+	}
+	if recipe.Hostname != "eagle" {
+		t.Fatalf("recipe.Hostname = %q, want %q", recipe.Hostname, "eagle")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var found bool
+		for _, s := range plan.Steps {
+			if s.ID == "hostname:eagle" && s.Hostname == "eagle" && s.Phase == "configuration" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("step hostname:eagle missing in plan for family %s", family)
+		}
+	}
+}
+
 
