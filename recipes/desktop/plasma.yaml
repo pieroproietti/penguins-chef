@@ -64,12 +64,13 @@ profiles:
 
   opensuse:
     packages:
-      - plasma-workspace
-      - plasma-desktop
+      - plasma6-session
+      - plasma6-workspace
+      - plasma6-desktop
       - dolphin
       - konsole
-      - plasma-nm
-      - noto-sans-fonts
+      - plasma6-nm
+      - google-noto-sans-fonts
       - MozillaFirefox
       - spice-vdagent
       - xdg-user-dirs
