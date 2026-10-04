@@ -64,6 +64,7 @@ profiles:
 
   opensuse:
     packages:
+      - xorg-x11-server
       - plasma6-session
       - plasma6-workspace
       - plasma6-desktop
