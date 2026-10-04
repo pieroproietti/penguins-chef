@@ -12,22 +12,22 @@ profiles:
     packages:
       - ark
       - kcalc
-      - kwrite
+      - kate
 
   archlinux:
     packages:
       - ark
       - kcalc
-      - kwrite
+      - kate
 
   fedora:
     packages:
       - ark
       - kcalc
-      - kwrite
+      - kate
 
   opensuse:
     packages:
       - ark
       - kcalc
-      - kwrite
+      - kate
