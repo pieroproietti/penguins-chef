@@ -1,0 +1,33 @@
+version: 1
+name: albatros
+hostname: albatros
+
+include:
+  - ../../desktop/plasma.yaml
+
+sysroot: sysroot
+
+profiles:
+  debian:
+    packages:
+      - ark
+      - kcalc
+      - kwrite
+
+  archlinux:
+    packages:
+      - ark
+      - kcalc
+      - kwrite
+
+  fedora:
+    packages:
+      - ark
+      - kcalc
+      - kwrite
+
+  opensuse:
+    packages:
+      - ark
+      - kcalc
+      - kwrite

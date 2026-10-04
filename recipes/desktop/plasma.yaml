@@ -1,0 +1,80 @@
+version: 1
+name: plasma-desktop
+
+include:
+  - ../base/base.yaml
+  - sddm.yaml
+
+profiles:
+  debian:
+    packages:
+      - xserver-xorg
+      - kde-plasma-desktop
+      - dolphin
+      - konsole
+      - plasma-nm
+      - fonts-noto-core
+      - firefox-esr
+      - spice-vdagent
+      - xdg-user-dirs
+      - sddm-theme-breeze
+    files:
+      - path: /etc/sddm.conf.d/50-tailor.conf
+        content: |
+          [Theme]
+          Current=breeze
+
+  archlinux:
+    packages:
+      - xorg-server
+      - plasma-desktop
+      - plasma-workspace
+      - dolphin
+      - konsole
+      - plasma-nm
+      - powerdevil
+      - noto-fonts
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+    files:
+      - path: /etc/sddm.conf.d/50-tailor.conf
+        content: |
+          [Theme]
+          Current=breeze
+
+  fedora:
+    packages:
+      - plasma-desktop
+      - plasma-workspace
+      - dolphin
+      - konsole
+      - plasma-nm
+      - powerdevil
+      - google-noto-sans-fonts
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - sddm-breeze
+    files:
+      - path: /etc/sddm.conf.d/50-tailor.conf
+        content: |
+          [Theme]
+          Current=breeze
+
+  opensuse:
+    packages:
+      - plasma-workspace
+      - plasma-desktop
+      - dolphin
+      - konsole
+      - plasma-nm
+      - noto-sans-fonts
+      - MozillaFirefox
+      - spice-vdagent
+      - xdg-user-dirs
+    files:
+      - path: /etc/sddm.conf.d/50-tailor.conf
+        content: |
+          [Theme]
+          Current=breeze

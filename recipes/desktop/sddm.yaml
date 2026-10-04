@@ -1,0 +1,31 @@
+version: 1
+name: sddm
+
+profiles:
+  debian:
+    packages:
+      - sddm
+    default_target: graphical.target
+    services:
+      - sddm.service
+
+  archlinux:
+    packages:
+      - sddm
+    default_target: graphical.target
+    services:
+      - sddm.service
+
+  fedora:
+    packages:
+      - sddm
+    default_target: graphical.target
+    services:
+      - sddm.service
+
+  opensuse:
+    packages:
+      - sddm
+    default_target: graphical.target
+    services:
+      - sddm.service
