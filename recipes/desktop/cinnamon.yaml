@@ -1,0 +1,81 @@
+version: 1
+name: cinnamon-desktop
+
+include:
+  - ../base/base.yaml
+  - lightdm.yaml
+
+profiles:
+  debian:
+    packages:
+      - xserver-xorg
+      - cinnamon-desktop-environment
+      - gnome-terminal
+      - fonts-dejavu-core
+      - firefox-esr
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=cinnamon
+
+  archlinux:
+    packages:
+      - xorg-server
+      - cinnamon
+      - nemo-fileroller
+      - gnome-terminal
+      - ttf-dejavu
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=cinnamon
+
+  fedora:
+    packages:
+      - xorg-x11-server-Xorg
+      - cinnamon
+      - nemo
+      - gnome-terminal
+      - dejavu-sans-fonts
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=cinnamon
+
+  opensuse:
+    packages:
+      - xorg-x11-server
+      - patterns-cinnamon-cinnamon
+      - cinnamon
+      - gnome-terminal
+      - pipewire
+      - pipewire-pulseaudio
+      - wireplumber
+      - dejavu-fonts
+      - MozillaFirefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=cinnamon

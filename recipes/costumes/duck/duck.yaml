@@ -1,0 +1,33 @@
+version: 1
+name: duck
+hostname: duck
+
+include:
+  - ../../desktop/cinnamon.yaml
+
+sysroot: sysroot
+
+profiles:
+  debian:
+    packages:
+      - gimp
+      - libreoffice
+      - vlc
+
+  archlinux:
+    packages:
+      - gimp
+      - libreoffice-fresh
+      - vlc
+
+  fedora:
+    packages:
+      - gimp
+      - libreoffice
+      - vlc
+
+  opensuse:
+    packages:
+      - gimp
+      - libreoffice
+      - vlc

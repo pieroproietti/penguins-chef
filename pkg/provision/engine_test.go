@@ -896,4 +896,38 @@ func TestColibriRecipeHasHostname(t *testing.T) {
 	}
 }
 
+func TestDuckRecipeHasHostnameAndBuilds(t *testing.T) {
+	path := "../../recipes/costumes/duck/duck.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open duck.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load duck.yaml: %v", err)
+	}
+	if recipe.Hostname != "duck" {
+		t.Fatalf("recipe.Hostname = %q, want %q", recipe.Hostname, "duck")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var found bool
+		for _, s := range plan.Steps {
+			if s.ID == "hostname:duck" && s.Hostname == "duck" && s.Phase == "configuration" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("step hostname:duck missing in plan for family %s", family)
+		}
+	}
+}
+
 
