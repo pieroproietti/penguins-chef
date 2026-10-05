@@ -1,5 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Swallow Wallpaper
-Exec=pcmanfm-qt --set-wallpaper="/usr/share/backgrounds/swallow/swallow.jpg" --wallpaper-mode=stretch
+Exec=sh -c "sleep 1 && pcmanfm-qt --set-wallpaper=/usr/share/backgrounds/swallow/swallow.jpg --wallpaper-mode=zoom"
 OnlyShowIn=LXQt;
+X-LXQt-Need-Tray=false
