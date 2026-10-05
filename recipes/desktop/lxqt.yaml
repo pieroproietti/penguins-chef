@@ -1,0 +1,76 @@
+version: 1
+name: lxqt-desktop
+
+include:
+  - ../base/base.yaml
+  - sddm.yaml
+
+profiles:
+  debian:
+    packages:
+      - xserver-xorg
+      - lxqt
+      - openbox
+      - pavucontrol-qt
+      - fonts-dejavu-core
+      - firefox-esr
+      - spice-vdagent
+      - xdg-user-dirs
+
+  archlinux:
+    packages:
+      - xorg-server
+      - lxqt-session
+      - lxqt-panel
+      - lxqt-globalkeys
+      - lxqt-notificationd
+      - lxqt-policykit
+      - lxqt-powermanagement
+      - lxqt-runner
+      - lxqt-qtplugin
+      - lxqt-themes
+      - pcmanfm-qt
+      - openbox
+      - qterminal
+      - breeze-icons
+      - pavucontrol-qt
+      - ttf-dejavu
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+
+  fedora:
+    packages:
+      - xorg-x11-server-Xorg
+      - lxqt-session
+      - lxqt-panel
+      - lxqt-globalkeys
+      - lxqt-notificationd
+      - lxqt-policykit
+      - lxqt-powermanagement
+      - lxqt-runner
+      - lxqt-themes
+      - pcmanfm-qt
+      - openbox
+      - qterminal
+      - breeze-icon-theme
+      - pavucontrol-qt
+      - dejavu-sans-fonts
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+
+  opensuse:
+    packages:
+      - xorg-x11-server
+      - patterns-lxqt-lxqt
+      - lxqt-session
+      - qterminal
+      - openbox
+      - pipewire
+      - pipewire-pulseaudio
+      - wireplumber
+      - dejavu-fonts
+      - MozillaFirefox
+      - spice-vdagent
+      - xdg-user-dirs

@@ -1,0 +1,91 @@
+version: 1
+name: mate-desktop
+
+include:
+  - ../base/base.yaml
+  - lightdm.yaml
+
+profiles:
+  debian:
+    packages:
+      - xserver-xorg
+      - mate-desktop-environment
+      - mate-terminal
+      - fonts-dejavu-core
+      - firefox-esr
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=mate
+
+  archlinux:
+    packages:
+      - xorg-server
+      - mate-session-manager
+      - mate-panel
+      - mate-settings-daemon
+      - mate-control-center
+      - mate-terminal
+      - caja
+      - marco
+      - mate-polkit
+      - mate-themes
+      - ttf-dejavu
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=mate
+
+  fedora:
+    packages:
+      - xorg-x11-server-Xorg
+      - mate-session-manager
+      - mate-panel
+      - mate-settings-daemon
+      - mate-control-center
+      - mate-terminal
+      - caja
+      - marco
+      - dejavu-sans-fonts
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=mate
+
+  opensuse:
+    packages:
+      - xorg-x11-server
+      - patterns-mate-mate
+      - mate-session-manager
+      - mate-terminal
+      - pipewire
+      - pipewire-pulseaudio
+      - wireplumber
+      - dejavu-fonts
+      - MozillaFirefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=mate

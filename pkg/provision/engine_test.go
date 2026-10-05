@@ -378,9 +378,9 @@ func TestStrictSchema(t *testing.T) {
 			t.Fatalf("invalid schema accepted: %s", input)
 		}
 	}
-	for _, example := range []string{"lightdm", "colibri"} {
+	for _, recipePath := range []string{"../../recipes/desktop/lightdm.yaml", "../../recipes/costumes/colibri/colibri.yaml"} {
 		for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
-			f, err := os.Open("../../examples/provision/" + example + ".yaml")
+			f, err := os.Open(recipePath)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -963,5 +963,157 @@ func TestEagleRecipeHasHostnameAndBuilds(t *testing.T) {
 		}
 	}
 }
+
+func TestMateDesktopRecipeBuilds(t *testing.T) {
+	path := "../../recipes/desktop/mate.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open mate.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load mate.yaml: %v", err)
+	}
+	if recipe.Name != "mate-desktop" {
+		t.Fatalf("recipe.Name = %q, want %q", recipe.Name, "mate-desktop")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var foundDM bool
+		var foundTarget bool
+		for _, s := range plan.Steps {
+			if s.ID == "service:lightdm.service" {
+				foundDM = true
+			}
+			if s.ID == "default-target:graphical.target" {
+				foundTarget = true
+			}
+		}
+		if !foundDM {
+			t.Fatalf("step service:lightdm.service missing in plan for family %s", family)
+		}
+		if !foundTarget {
+			t.Fatalf("step default-target:graphical.target missing in plan for family %s", family)
+		}
+	}
+}
+
+func TestSparrowRecipeHasHostnameAndBuilds(t *testing.T) {
+	path := "../../recipes/costumes/sparrow/sparrow.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open sparrow.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load sparrow.yaml: %v", err)
+	}
+	if recipe.Hostname != "sparrow" {
+		t.Fatalf("recipe.Hostname = %q, want %q", recipe.Hostname, "sparrow")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var found bool
+		for _, s := range plan.Steps {
+			if s.ID == "hostname:sparrow" && s.Hostname == "sparrow" && s.Phase == "configuration" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("step hostname:sparrow missing in plan for family %s", family)
+		}
+	}
+}
+
+func TestLxqtDesktopRecipeBuilds(t *testing.T) {
+	path := "../../recipes/desktop/lxqt.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open lxqt.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load lxqt.yaml: %v", err)
+	}
+	if recipe.Name != "lxqt-desktop" {
+		t.Fatalf("recipe.Name = %q, want %q", recipe.Name, "lxqt-desktop")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var foundDM bool
+		var foundTarget bool
+		for _, s := range plan.Steps {
+			if s.ID == "service:sddm.service" {
+				foundDM = true
+			}
+			if s.ID == "default-target:graphical.target" {
+				foundTarget = true
+			}
+		}
+		if !foundDM {
+			t.Fatalf("step service:sddm.service missing in plan for family %s", family)
+		}
+		if !foundTarget {
+			t.Fatalf("step default-target:graphical.target missing in plan for family %s", family)
+		}
+	}
+}
+
+func TestSwallowRecipeHasHostnameAndBuilds(t *testing.T) {
+	path := "../../recipes/costumes/swallow/swallow.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open swallow.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load swallow.yaml: %v", err)
+	}
+	if recipe.Hostname != "swallow" {
+		t.Fatalf("recipe.Hostname = %q, want %q", recipe.Hostname, "swallow")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var found bool
+		for _, s := range plan.Steps {
+			if s.ID == "hostname:swallow" && s.Hostname == "swallow" && s.Phase == "configuration" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("step hostname:swallow missing in plan for family %s", family)
+		}
+	}
+}
+
+
+
+
 
 

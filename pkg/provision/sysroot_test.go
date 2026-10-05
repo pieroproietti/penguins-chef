@@ -234,7 +234,7 @@ func TestRecipeSysrootResolvedRelativeToRecipe(t *testing.T) {
 }
 
 func TestPublicColibriSysrootContainsOnlyReviewedAssets(t *testing.T) {
-	root := "../../examples/provision/colibri/sysroot"
+	root := "../../recipes/costumes/colibri/sysroot"
 	allowed := map[string]bool{
 		"etc/modules-load.d/uinput.conf": true,
 		"etc/skel/.bashrc":               true, "etc/skel/.bash_logout": true, "etc/skel/.profile": true,

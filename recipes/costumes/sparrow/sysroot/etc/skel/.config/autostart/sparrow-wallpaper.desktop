@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Sparrow Wallpaper
+Exec=sh -c "gsettings set org.mate.background picture-filename '/usr/share/backgrounds/sparrow/sparrow.jpg' && gsettings set org.mate.background picture-options 'zoom'"
+OnlyShowIn=MATE;
+X-MATE-Autostart-enabled=true
