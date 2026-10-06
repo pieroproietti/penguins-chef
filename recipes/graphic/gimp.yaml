@@ -1,0 +1,19 @@
+version: 1
+name: gimp
+
+profiles:
+  debian:
+    packages:
+      - gimp
+
+  archlinux:
+    packages:
+      - gimp
+
+  fedora:
+    packages:
+      - gimp
+
+  opensuse:
+    packages:
+      - gimp

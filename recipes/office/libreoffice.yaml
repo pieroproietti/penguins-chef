@@ -1,0 +1,19 @@
+version: 1
+name: libreoffice
+
+profiles:
+  debian:
+    packages:
+      - libreoffice
+
+  archlinux:
+    packages:
+      - libreoffice-fresh
+
+  fedora:
+    packages:
+      - libreoffice
+
+  opensuse:
+    packages:
+      - libreoffice

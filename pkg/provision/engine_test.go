@@ -1112,8 +1112,29 @@ func TestSwallowRecipeHasHostnameAndBuilds(t *testing.T) {
 	}
 }
 
-
-
-
-
-
+func TestAppRecipesBuild(t *testing.T) {
+	for _, appPath := range []string{
+		"../../recipes/graphic/gimp.yaml",
+		"../../recipes/office/libreoffice.yaml",
+		"../../recipes/media/vlc.yaml",
+	} {
+		f, err := os.Open(appPath)
+		if err != nil {
+			t.Fatalf("failed to open %s: %v", appPath, err)
+		}
+		recipe, err := Load(f)
+		f.Close()
+		if err != nil {
+			t.Fatalf("failed to load %s: %v", appPath, err)
+		}
+		for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+			plan, err := Build(recipe, family, "systemd")
+			if err != nil {
+				t.Fatalf("Build for %s (%s) failed: %v", appPath, family, err)
+			}
+			if len(plan.Steps) == 0 {
+				t.Fatalf("expected plan steps for %s (%s)", appPath, family)
+			}
+		}
+	}
+}

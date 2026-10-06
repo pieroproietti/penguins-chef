@@ -1,0 +1,19 @@
+version: 1
+name: vlc
+
+profiles:
+  debian:
+    packages:
+      - vlc
+
+  archlinux:
+    packages:
+      - vlc
+
+  fedora:
+    packages:
+      - vlc
+
+  opensuse:
+    packages:
+      - vlc

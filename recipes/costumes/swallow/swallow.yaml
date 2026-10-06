@@ -6,28 +6,3 @@ include:
   - ../../desktop/lxqt.yaml
 
 sysroot: sysroot
-
-profiles:
-  debian:
-    packages:
-      - gimp
-      - libreoffice
-      - vlc
-
-  archlinux:
-    packages:
-      - gimp
-      - libreoffice-fresh
-      - vlc
-
-  fedora:
-    packages:
-      - gimp
-      - libreoffice
-      - vlc
-
-  opensuse:
-    packages:
-      - gimp
-      - libreoffice
-      - vlc
