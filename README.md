@@ -6,6 +6,7 @@
 
 ## 🚀 Features
 
+- **Get**: Clone or update the chef repository in `~/.chef` (`chef get [url]`).
 - **Apply**: Validate and execute an operation-based recipe (`chef apply <recipe.yaml>`), with a reviewable dry run.
 - **Export**: Transfer native packages (`chef export pkg`) or execution logs and reports (`chef export log`) to remote storage via SSH.
 - **Build**: Integrated packaging tool to compile binaries and produce native distribution packages (`chef tools build`).
@@ -28,6 +29,24 @@ sudo make install
 ---
 
 ## 👨‍🍳 Command Reference
+
+### Get Command
+
+The **`get`** command clones or updates the chef repository in `~/.chef`:
+
+```bash
+# Clone or pull default repository in ~/.chef
+chef get
+
+# Clone a custom repository or branch
+chef get https://github.com/pieroproietti/penguins-chef --branch main
+```
+
+**Flags:**
+- `-u, --url <url>`: URL of the chef repository (default: `https://github.com/pieroproietti/penguins-chef`).
+- `-b, --branch <branch>`: Branch of the chef repository.
+
+### Apply Command
 
 `apply` builds an explicit repository → packages → configuration → init plan.
 Use `--dry-run` to inspect the operations before applying them.
