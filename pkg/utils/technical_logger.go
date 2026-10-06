@@ -10,10 +10,10 @@ import (
 	"time"
 )
 
-// DefaultTechnicalLogPath is the shared technical log used by tailor.
-const DefaultTechnicalLogPath = "/var/log/tailor/tailor.log"
+// DefaultTechnicalLogPath is the shared technical log used by chef.
+const DefaultTechnicalLogPath = "/var/log/chef/chef.log"
 
-// LogLevel identifies the severity of an event produced by tailor.
+// LogLevel identifies the severity of an event produced by chef.
 type LogLevel string
 
 const (
@@ -30,7 +30,7 @@ type LogField struct {
 	Value string
 }
 
-// TechnicalLogger writes tailor events and raw command output to one file.
+// TechnicalLogger writes chef events and raw command output to one file.
 // It deliberately has no knowledge of distributions or package managers.
 type TechnicalLogger struct {
 	path string
@@ -38,7 +38,7 @@ type TechnicalLogger struct {
 }
 
 // NewTechnicalLogger creates a logger for path. An empty path uses the
-// standard tailor technical log.
+// standard chef technical log.
 func NewTechnicalLogger(path string) *TechnicalLogger {
 	if path == "" {
 		path = DefaultTechnicalLogPath
@@ -51,7 +51,7 @@ func (l *TechnicalLogger) Path() string {
 	return l.path
 }
 
-// Log writes a structured tailor event.
+// Log writes a structured chef event.
 func (l *TechnicalLogger) Log(level LogLevel, message string, fields ...LogField) error {
 	var line strings.Builder
 	line.WriteString(time.Now().Format("2006-01-02 15:04:05"))
@@ -86,7 +86,7 @@ func (l *TechnicalLogger) Error(message string, fields ...LogField) error {
 }
 
 // CommandOutput records a raw line emitted by a command. stream is normally
-// stdout or stderr and is intentionally distinct from tailor events.
+// stdout or stderr and is intentionally distinct from chef events.
 func (l *TechnicalLogger) CommandOutput(stream, line string) error {
 	entry := fmt.Sprintf("%s COMMAND %s %s\n", time.Now().Format("2006-01-02 15:04:05"), stream, line)
 	return l.write(entry)

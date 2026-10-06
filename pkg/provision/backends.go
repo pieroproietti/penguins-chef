@@ -90,11 +90,11 @@ type dnfBackend struct{}
 
 func (dnfBackend) prepare() []string { return []string{"dnf", "--refresh", "makecache"} }
 func (dnfBackend) availability(pkg string) []string {
-	return []string{"dnf", "-q", "repoquery", "--available", "--queryformat", "tailor-package:%{name}\\n", pkg}
+	return []string{"dnf", "-q", "repoquery", "--available", "--queryformat", "chef-package:%{name}\\n", pkg}
 }
 func (dnfBackend) validateAvailability(out string) error {
 	for _, line := range strings.Split(out, "\n") {
-		if strings.HasPrefix(line, "tailor-package:") && identifier.MatchString(strings.TrimPrefix(line, "tailor-package:")) {
+		if strings.HasPrefix(line, "chef-package:") && identifier.MatchString(strings.TrimPrefix(line, "chef-package:")) {
 			return nil
 		}
 	}

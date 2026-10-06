@@ -302,7 +302,7 @@ jobs:
       - name: 📤 Publish Package as Artifact ${{ matrix.distro }}
         uses: actions/upload-artifact@v4
         with:
-          name: penguins-tailor-${{ matrix.distro }}
+          name: penguins-chef-${{ matrix.distro }}
           path: export/
           retention-days: 7
           

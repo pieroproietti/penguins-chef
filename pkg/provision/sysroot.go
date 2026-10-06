@@ -168,11 +168,17 @@ func replicateSkelToCurrentUser(ctx context.Context, r Runner, source string) er
 }
 
 func currentNonRootUser() (*user.User, error) {
-	for _, envKey := range []string{"TAILOR_USER", "SUDO_USER", "DOAS_USER"} {
+	getHome := func() string {
+		if home := strings.TrimSpace(os.Getenv("CHEF_USER_HOME")); home != "" {
+			return home
+		}
+		return strings.TrimSpace(os.Getenv("TAILOR_USER_HOME"))
+	}
+	for _, envKey := range []string{"CHEF_USER", "TAILOR_USER", "SUDO_USER", "DOAS_USER"} {
 		val := strings.TrimSpace(os.Getenv(envKey))
 		if val != "" && val != "root" {
 			if u, err := user.Lookup(val); err == nil && u.HomeDir != "" {
-				if home := strings.TrimSpace(os.Getenv("TAILOR_USER_HOME")); home != "" {
+				if home := getHome(); home != "" {
 					u.HomeDir = home
 				}
 				return u, nil
@@ -180,7 +186,7 @@ func currentNonRootUser() (*user.User, error) {
 		}
 	}
 	if u, err := user.Current(); err == nil && u.Uid != "0" && u.HomeDir != "" {
-		if home := strings.TrimSpace(os.Getenv("TAILOR_USER_HOME")); home != "" {
+		if home := getHome(); home != "" {
 			u.HomeDir = home
 		}
 		return u, nil

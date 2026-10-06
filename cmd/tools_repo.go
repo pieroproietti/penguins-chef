@@ -6,8 +6,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/repo"
-	"github.com/pieroproietti/penguins-tailor/pkg/utils"
+	"github.com/pieroproietti/penguins-chef/pkg/repo"
+	"github.com/pieroproietti/penguins-chef/pkg/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -21,8 +21,8 @@ to download packages from the official penguins-eggs.net repository.
 Supported actions:
   add - Install the GPG keys and add the repository
   rm  - Removes repository files and GPG keys`,
-	Example: `  sudo tailor tools repo add
-  sudo tailor tools repo rm`,
+	Example: `  sudo chef tools repo add
+  sudo chef tools repo rm`,
 	Args:      cobra.ExactArgs(1),
 	ValidArgs: []string{"add", "rm"},
 	Run: func(cmd *cobra.Command, args []string) {

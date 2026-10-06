@@ -1,4 +1,4 @@
-module github.com/pieroproietti/penguins-tailor
+module github.com/pieroproietti/penguins-chef
 
 go 1.25.0
 

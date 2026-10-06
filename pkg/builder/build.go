@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/context"
-	"github.com/pieroproietti/penguins-tailor/pkg/distro"
-	"github.com/pieroproietti/penguins-tailor/pkg/utils"
+	"github.com/pieroproietti/penguins-chef/pkg/context"
+	"github.com/pieroproietti/penguins-chef/pkg/distro"
+	"github.com/pieroproietti/penguins-chef/pkg/utils"
 )
 
 func LogBuild(format string, a ...interface{}) {

@@ -34,7 +34,7 @@ go run . apply examples/provision/lightdm.yaml --dry-run --family fedora --init 
 go run . apply examples/provision/colibri.yaml --dry-run --family archlinux --init systemd
 
 # Su una macchina di prova con la famiglia e systemd rilevati dall'host:
-sudo tailor apply examples/provision/lightdm.yaml
+sudo chef apply examples/provision/lightdm.yaml
 ```
 
 `apply` usa solo la ricetta fornita e non seleziona fallback per altre
@@ -95,9 +95,9 @@ directory del progetto:
 make test
 go run . apply examples/provision/colibri.yaml --dry-run --family fedora --init systemd
 make build
-sudo /tmp/tailor-build-dir/tailor apply examples/provision/colibri.yaml
+sudo /tmp/chef-build-dir/chef apply examples/provision/colibri.yaml
 # Ripetere per verificare che pacchetti, file e servizi siano già applicati.
-sudo /tmp/tailor-build-dir/tailor apply examples/provision/colibri.yaml
+sudo /tmp/chef-build-dir/chef apply examples/provision/colibri.yaml
 rpm -q lightdm lightdm-gtk xfce4-session
 systemctl is-enabled lightdm.service
 ```
@@ -147,8 +147,8 @@ Tumbleweed con il servizio nativo `lightdm.service`; Leap 15.6 e sistemi
 transactional richiedono un percorso separato e non sono validati.
 
 ```bash
-tailor apply examples/provision/colibri.yaml --dry-run --family opensuse --init systemd
-sudo tailor apply examples/provision/colibri.yaml
+chef apply examples/provision/colibri.yaml --dry-run --family opensuse --init systemd
+sudo chef apply examples/provision/colibri.yaml
 systemctl get-default
 systemctl is-enabled lightdm.service
 ```
@@ -173,9 +173,9 @@ separato. La preparazione esegue `pacman -Syu --noconfirm`, quindi aggiorna anch
 il sistema prima di installare i pacchetti mancanti.
 
 ```bash
-tailor apply examples/provision/colibri.yaml --dry-run --family archlinux --init systemd
-sudo tailor apply examples/provision/colibri.yaml
-sudo tailor apply examples/provision/colibri.yaml
+chef apply examples/provision/colibri.yaml --dry-run --family archlinux --init systemd
+sudo chef apply examples/provision/colibri.yaml
+sudo chef apply examples/provision/colibri.yaml
 systemctl is-enabled lightdm.service
 systemctl show --property=Id --value display-manager.service
 systemctl get-default
@@ -197,8 +197,8 @@ anche quando il comando viene eseguito da un'altra directory. Il sysroot
 ripulito è versionato insieme agli esempi.
 
 ```bash
-tailor apply examples/provision/colibri.yaml --dry-run
-sudo tailor apply examples/provision/colibri.yaml
+chef apply examples/provision/colibri.yaml --dry-run
+sudo chef apply examples/provision/colibri.yaml
 ```
 
 `rsync` deve essere disponibile. `--sysroot /percorso/sysroot` sostituisce la
@@ -318,10 +318,10 @@ recipes/
 ```
 
 Questa struttura garantisce che un utente possa installare:
-- Solo un display manager: `tailor apply recipes/desktop/lightdm.yaml`
-- Un desktop XFCE standard di distribuzione: `tailor apply recipes/desktop/xfce4.yaml`
-- Il costume rifinito e personalizzato: `tailor apply recipes/costumes/colibri/colibri.yaml`
-- Un ambiente di sviluppo additivo su una macchina già configurata: `tailor apply recipes/dev/devel.yaml`
+- Solo un display manager: `chef apply recipes/desktop/lightdm.yaml`
+- Un desktop XFCE standard di distribuzione: `chef apply recipes/desktop/xfce4.yaml`
+- Il costume rifinito e personalizzato: `chef apply recipes/costumes/colibri/colibri.yaml`
+- Un ambiente di sviluppo additivo su una macchina già configurata: `chef apply recipes/dev/devel.yaml`
 
 ### 3. Granularità e livello di astrazione: evitare il "meta-package-manager"
 

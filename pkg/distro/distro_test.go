@@ -1,7 +1,7 @@
 package distro
 
 import (
-	"github.com/pieroproietti/penguins-tailor/pkg/provision"
+	"github.com/pieroproietti/penguins-chef/pkg/provision"
 	"os"
 	"testing"
 )

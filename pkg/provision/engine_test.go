@@ -63,7 +63,7 @@ func (r *fakeRunner) Output(_ context.Context, args []string) (string, error) {
 		if last == r.unavailable {
 			return "No matching packages", nil
 		}
-		return "tailor-package:" + last + "\n", nil
+		return "chef-package:" + last + "\n", nil
 	case args[0] == "systemctl" && args[1] == "show":
 		return r.displayManager + "\n", nil
 	case args[0] == "systemctl" && args[1] == "get-default":
@@ -406,12 +406,12 @@ func TestStrictSchema(t *testing.T) {
 
 func TestDNFAvailabilityRejectsEmptyAndDiagnosticOutput(t *testing.T) {
 	backend := dnfBackend{}
-	for _, out := range []string{"", "No matching packages", "Warning: repository unavailable", "tailor-package:"} {
+	for _, out := range []string{"", "No matching packages", "Warning: repository unavailable", "chef-package:"} {
 		if err := backend.validateAvailability(out); err == nil {
 			t.Fatalf("accepted unavailable package: %q", out)
 		}
 	}
-	if err := backend.validateAvailability("Warning: metadata refreshed\ntailor-package:lightdm\n"); err != nil {
+	if err := backend.validateAvailability("Warning: metadata refreshed\nchef-package:lightdm\n"); err != nil {
 		t.Fatal(err)
 	}
 }

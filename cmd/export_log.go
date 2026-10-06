@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/distro"
-	"github.com/pieroproietti/penguins-tailor/pkg/utils"
+	"github.com/pieroproietti/penguins-chef/pkg/distro"
+	"github.com/pieroproietti/penguins-chef/pkg/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -33,16 +33,16 @@ var exportLogCmd = &cobra.Command{
 		}{}
 
 		identity := distro.NewDistro().Identity()
-		technicalLog := "/var/log/tailor/tailor.log"
+		technicalLog := "/var/log/chef/chef.log"
 		if identity != "" {
-			technicalLog = filepath.Join("/var/log/tailor", fmt.Sprintf("tailor-%s.log", identity))
+			technicalLog = filepath.Join("/var/log/chef", fmt.Sprintf("chef-%s.log", identity))
 		}
 		files = append(files, struct {
 			LocalPath  string
 			RemoteName string
 		}{technicalLog, filepath.Base(technicalLog)})
 
-		if reports, err := filepath.Glob("/var/log/tailor/tailor-report-*.txt"); err == nil && len(reports) > 0 {
+		if reports, err := filepath.Glob("/var/log/chef/chef-report-*.txt"); err == nil && len(reports) > 0 {
 			var latestReport string
 			var latestTime time.Time
 			for _, r := range reports {

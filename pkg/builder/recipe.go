@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/context"
-	"github.com/pieroproietti/penguins-tailor/pkg/utils"
+	"github.com/pieroproietti/penguins-chef/pkg/context"
+	"github.com/pieroproietti/penguins-chef/pkg/utils"
 )
 
 // recipe writes the control file (PKGBUILD, SPEC, etc.) into the staging area
@@ -48,11 +48,11 @@ func writePKGBUILD(ctx context.RuntimeContext, stage string, dist string, data R
 	return writeTemplate(tmplPath, destPath, data)
 }
 
-// writeSpecFile writes penguins-tailor.spec for fedora/opensuse
+// writeSpecFile writes penguins-chef.spec for fedora/opensuse
 func writeSpecFile(ctx context.RuntimeContext, stage string, dist string, data RecipeData) error {
 	tmplName := fmt.Sprintf("%s.tmpl", dist)
 	tmplPath := filepath.Join(ctx.ProjRoot, "pkg/builder/templates", tmplName)
-	destPath := filepath.Join(stage, "penguins-tailor.spec")
+	destPath := filepath.Join(stage, "penguins-chef.spec")
 	return writeTemplate(tmplPath, destPath, data)
 }
 

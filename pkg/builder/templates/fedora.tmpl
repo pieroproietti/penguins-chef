@@ -1,9 +1,9 @@
-Name:           penguins-tailor
+Name:           penguins-chef
 Version:        {{.BaseVersion}}
 Release:        {{.Rel}}%{?dist}
-Summary:        penguins-tailor: dress up your Linux distribution
+Summary:        penguins-chef: cook and configure your Linux distribution
 License:        GPLv3
-URL:            https://github.com/pieroproietti/penguins-tailor
+URL:            https://github.com/pieroproietti/penguins-chef
 
 Requires:       git
 Requires:       rsync
@@ -12,8 +12,8 @@ Requires:       rsync
 %define __os_install_post %{nil}
 
 %description
-penguins-tailor is a lightweight tool to manage and apply system configurations,
-desktop environments, and themes ("costumes") to Linux distributions.
+penguins-chef is a lightweight tool to manage and apply system configurations,
+desktop environments, and recipes to Linux distributions.
 
 %prep
 %build
@@ -27,7 +27,7 @@ if [ -d %{_stagedir}/etc ]; then
 fi
 
 %files
-/usr/bin/tailor
+/usr/bin/chef
 /usr/share/man/man1/*
 /usr/share/bash-completion/completions/*
 /usr/share/fish/vendor_completions.d/*
@@ -35,4 +35,4 @@ fi
 
 %changelog
 * {{.RpmDate}} Piero Proietti <piero.proietti@gmail.com> - {{.BaseVersion}}-{{.Rel}}
-- Automated build via penguins-tailor builder
+- Automated build via penguins-chef builder

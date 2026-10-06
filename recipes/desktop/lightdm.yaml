@@ -7,7 +7,7 @@ profiles:
       - lightdm
       - lightdm-gtk-greeter
     files:
-      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
@@ -20,7 +20,7 @@ profiles:
       - lightdm
       - lightdm-gtk-greeter
     files:
-      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
@@ -33,7 +33,7 @@ profiles:
       - lightdm
       - lightdm-gtk
     files:
-      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
@@ -46,7 +46,7 @@ profiles:
       - lightdm
       - lightdm-gtk-greeter
     files:
-      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter

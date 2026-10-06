@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/distro"
-	"github.com/pieroproietti/penguins-tailor/pkg/provision"
+	"github.com/pieroproietti/penguins-chef/pkg/distro"
+	"github.com/pieroproietti/penguins-chef/pkg/provision"
 	"github.com/spf13/cobra"
 )
 

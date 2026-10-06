@@ -19,7 +19,7 @@ profiles:
       - xdg-user-dirs
       - sddm-theme-breeze
     files:
-      - path: /etc/sddm.conf.d/50-tailor.conf
+      - path: /etc/sddm.conf.d/50-chef.conf
         content: |
           [Theme]
           Current=breeze
@@ -38,7 +38,7 @@ profiles:
       - spice-vdagent
       - xdg-user-dirs
     files:
-      - path: /etc/sddm.conf.d/50-tailor.conf
+      - path: /etc/sddm.conf.d/50-chef.conf
         content: |
           [Theme]
           Current=breeze
@@ -57,7 +57,7 @@ profiles:
       - xdg-user-dirs
       - sddm-breeze
     files:
-      - path: /etc/sddm.conf.d/50-tailor.conf
+      - path: /etc/sddm.conf.d/50-chef.conf
         content: |
           [Theme]
           Current=breeze
@@ -76,7 +76,7 @@ profiles:
       - spice-vdagent
       - xdg-user-dirs
     files:
-      - path: /etc/sddm.conf.d/50-tailor.conf
+      - path: /etc/sddm.conf.d/50-chef.conf
         content: |
           [Theme]
           Current=breeze

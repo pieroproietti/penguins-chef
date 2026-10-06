@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/utils"
+	"github.com/pieroproietti/penguins-chef/pkg/utils"
 )
 
 const (

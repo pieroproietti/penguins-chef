@@ -2,17 +2,17 @@ VERSION := $(shell git describe --tags --always 2>/dev/null | sed 's/-g[0-9a-f]*
 
 RUNNER ?=
 
-BUILD_DIR ?= $(if $(GITHUB_WORKSPACE),$(GITHUB_WORKSPACE)/build,/tmp/tailor-build-dir)
+BUILD_DIR ?= $(if $(GITHUB_WORKSPACE),$(GITHUB_WORKSPACE)/build,/tmp/chef-build-dir)
 export BUILD_DIR
 
-BINARY = $(BUILD_DIR)/tailor
+BINARY = $(BUILD_DIR)/chef
 
 PACKAGES = *.deb *.rpm *.pkg.tar.zst PKGBUILD
 
 # -----------------------------------------------------------
 all: build docs
 	@echo "--------------------------------------"
-	@echo "Tailor built successfully! 🐧👗"
+	@echo "Chef built successfully! 🐧👨‍🍳"
 	@echo "Version: $(VERSION)"
 	@echo "Binary:  $(BINARY)"
 	@echo "--------------------------------------"
@@ -21,8 +21,8 @@ all: build docs
 # Build
 # -----------------------------------------------------------
 build: | $(BUILD_DIR)
-	@echo "  MAKING tailor (Go)..."
-	@go build -ldflags "-X 'github.com/pieroproietti/penguins-tailor/cmd.Version=$(VERSION)'" -o $(BINARY) main.go
+	@echo "  MAKING chef (Go)..."
+	@go build -ldflags "-X 'github.com/pieroproietti/penguins-chef/cmd.Version=$(VERSION)'" -o $(BINARY) main.go
 
 $(BUILD_DIR):
 	@mkdir -p $@
@@ -44,12 +44,12 @@ package: all
 # -----------------------------------------------------------
 clean:
 	@echo "  Cleaning build artifacts..."
-	@rm -rf $(BUILD_DIR) tailor
+	@rm -rf $(BUILD_DIR) chef
 	@rm -f $(PACKAGES)
 	@rm -rf docs/man docs/completion docs/md
 
 install: build
-	sudo install -m 755 $(BINARY) /usr/local/bin/tailor
+	sudo install -m 755 $(BINARY) /usr/local/bin/chef
 
 test:
 	go test -v ./...

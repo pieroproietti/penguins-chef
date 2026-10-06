@@ -6,7 +6,7 @@ package repo
 import (
 	"fmt"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/distro"
+	"github.com/pieroproietti/penguins-chef/pkg/distro"
 )
 
 // HandleRepos gestisce l'aggiunta o la rimozione dei repository penguins-eggs

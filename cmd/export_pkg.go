@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/distro"
-	"github.com/pieroproietti/penguins-tailor/pkg/utils"
+	"github.com/pieroproietti/penguins-chef/pkg/distro"
+	"github.com/pieroproietti/penguins-chef/pkg/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -38,16 +38,16 @@ func handleExportPkg(clean bool) {
 
 	switch family {
 	case "debian":
-		pattern = "penguins-tailor*.deb"
+		pattern = "penguins-chef*.deb"
 		extension = ".deb"
 	case "archlinux", "manjaro":
-		pattern = "penguins-tailor*.pkg.tar.zst"
+		pattern = "penguins-chef*.pkg.tar.zst"
 		extension = ".pkg.tar.zst"
 	case "fedora", "opensuse":
-		pattern = "penguins-tailor*.rpm"
+		pattern = "penguins-chef*.rpm"
 		extension = ".rpm"
 	case "alpine":
-		pattern = "penguins-tailor*.apk"
+		pattern = "penguins-chef*.apk"
 		extension = ".apk"
 	default:
 		utils.Fatal("No specific export rule for distro %s of family: %s", distroID, family)
@@ -58,7 +58,7 @@ func handleExportPkg(clean bool) {
 		utils.Fatal("No %s package found for export.", extension)
 	}
 
-	socketPath := "/tmp/tailor-ssh-mux-pkg"
+	socketPath := "/tmp/chef-ssh-mux-pkg"
 	muxOpts := fmt.Sprintf("-o ControlMaster=auto -o ControlPath=%s -o ControlPersist=2m", socketPath)
 
 	defer func() {

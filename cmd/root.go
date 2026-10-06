@@ -5,10 +5,10 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "tailor",
-	Short: "penguins-tailor: dress up your Linux distribution with costumes and configurations",
-	Long: `penguins-tailor is a lightweight tool to manage and apply system configurations,
-desktop environments, and themes ("costumes") to Linux distributions.`,
+	Use:   "chef",
+	Short: "penguins-chef: cook and configure your Linux distribution with recipes",
+	Long: `penguins-chef is a lightweight tool to manage and apply system configurations,
+desktop environments, and recipes to Linux distributions.`,
 }
 
 func Execute() error {

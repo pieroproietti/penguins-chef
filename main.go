@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pieroproietti/penguins-tailor/cmd"
+	"github.com/pieroproietti/penguins-chef/cmd"
 )
 
 func main() {

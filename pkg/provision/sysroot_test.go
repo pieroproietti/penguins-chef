@@ -292,7 +292,7 @@ func TestSysrootReplicatesSkelToCurrentUser(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(skel, ".config", "xfce4"), 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(skel, ".bashrc"), []byte("echo tailor-test"), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(skel, ".bashrc"), []byte("echo chef-test"), 0644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(skel, ".config", "xfce4", "panel.xml"), []byte("<panel/>"), 0644); err != nil {
@@ -308,8 +308,8 @@ func TestSysrootReplicatesSkelToCurrentUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("TAILOR_USER", u.Username)
-	t.Setenv("TAILOR_USER_HOME", tempHome)
+	t.Setenv("CHEF_USER", u.Username)
+	t.Setenv("CHEF_USER_HOME", tempHome)
 
 	r := HostRunner{Out: io.Discard, Err: io.Discard}
 	ctx := context.Background()
@@ -318,7 +318,7 @@ func TestSysrootReplicatesSkelToCurrentUser(t *testing.T) {
 	}
 
 	bashrc, err := os.ReadFile(filepath.Join(tempHome, ".bashrc"))
-	if err != nil || string(bashrc) != "echo tailor-test" {
+	if err != nil || string(bashrc) != "echo chef-test" {
 		t.Fatalf("unexpected .bashrc: %s, %v", string(bashrc), err)
 	}
 	panel, err := os.ReadFile(filepath.Join(tempHome, ".config", "xfce4", "panel.xml"))

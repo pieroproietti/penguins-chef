@@ -314,7 +314,7 @@ func writeAtomicFile(path, content string, perm os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
 	}
-	tmp, err := os.CreateTemp(filepath.Dir(path), ".tailor-*")
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".chef-*")
 	if err != nil {
 		return err
 	}

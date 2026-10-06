@@ -11,8 +11,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/context"
-	"github.com/pieroproietti/penguins-tailor/pkg/utils"
+	"github.com/pieroproietti/penguins-chef/pkg/context"
+	"github.com/pieroproietti/penguins-chef/pkg/utils"
 )
 
 func packager(ctx context.RuntimeContext, dist string, data RecipeData) {
@@ -24,7 +24,7 @@ func packager(ctx context.RuntimeContext, dist string, data RecipeData) {
 
 	switch dist {
 	case "alpine":
-		pkgFileName = fmt.Sprintf("penguins-tailor-%s-r%s.apk", data.BaseVersion, data.Rel)
+		pkgFileName = fmt.Sprintf("penguins-chef-%s-r%s.apk", data.BaseVersion, data.Rel)
 
 		apkOutDir := filepath.Join(stage, "APK")
 		os.MkdirAll(apkOutDir, 0755)
@@ -34,7 +34,7 @@ func packager(ctx context.RuntimeContext, dist string, data RecipeData) {
 		cmd.Env = append(os.Environ(), fmt.Sprintf("REPODEST=%s", apkOutDir))
 
 	case "arch", "manjaro":
-		pkgFileName = fmt.Sprintf("penguins-tailor-%s-%s-x86_64.pkg.tar.zst", data.BaseVersion, data.Rel)
+		pkgFileName = fmt.Sprintf("penguins-chef-%s-%s-x86_64.pkg.tar.zst", data.BaseVersion, data.Rel)
 		cmd = exec.Command("makepkg", "-s", "-f", "--noconfirm")
 		cmd.Dir = stage
 
@@ -48,16 +48,16 @@ func packager(ctx context.RuntimeContext, dist string, data RecipeData) {
 		)
 
 	case "debian":
-		pkgFileName = fmt.Sprintf("penguins-tailor_%s-%s_%s.deb", data.BaseVersion, data.Rel, getDebianArch())
+		pkgFileName = fmt.Sprintf("penguins-chef_%s-%s_%s.deb", data.BaseVersion, data.Rel, getDebianArch())
 		finalPath := filepath.Join(ctx.ProjRoot, pkgFileName)
 		cmd = exec.Command("dpkg-deb", "--root-owner-group", "--build", stage, finalPath)
 
 	case "fedora", "opensuse":
-		pkgFileName = fmt.Sprintf("penguins-tailor-%s-%s.x86_64.rpm", data.BaseVersion, data.Rel)
+		pkgFileName = fmt.Sprintf("penguins-chef-%s-%s.x86_64.rpm", data.BaseVersion, data.Rel)
 		rpmOutDir := filepath.Join(stage, "RPMS")
 		os.MkdirAll(rpmOutDir, 0755)
 
-		specFile := filepath.Join(stage, "penguins-tailor.spec")
+		specFile := filepath.Join(stage, "penguins-chef.spec")
 
 		cmd = exec.Command("rpmbuild", "-bb",
 			"--define", fmt.Sprintf("_stagedir %s", stage),
@@ -67,7 +67,7 @@ func packager(ctx context.RuntimeContext, dist string, data RecipeData) {
 
 	default:
 		utils.LogWarning("Distro %s not specifically handled in packager, defaulting to debian format", dist)
-		pkgFileName = fmt.Sprintf("penguins-tailor_%s-%s_%s.deb", data.BaseVersion, data.Rel, getDebianArch())
+		pkgFileName = fmt.Sprintf("penguins-chef_%s-%s_%s.deb", data.BaseVersion, data.Rel, getDebianArch())
 		finalPath := filepath.Join(ctx.ProjRoot, pkgFileName)
 		cmd = exec.Command("dpkg-deb", "--root-owner-group", "--build", stage, finalPath)
 	}

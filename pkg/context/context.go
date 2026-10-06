@@ -39,11 +39,11 @@ func Detect() RuntimeContext {
 	}
 
 	if ctx.BaseBuildDir = os.Getenv("BUILD_DIR"); ctx.BaseBuildDir == "" {
-		ctx.BaseBuildDir = "/tmp/tailor-build-dir"
+		ctx.BaseBuildDir = "/tmp/chef-build-dir"
 	}
 
 	if ctx.StageDir = os.Getenv("STAGE_DIR"); ctx.StageDir == "" {
-		ctx.StageDir = "/tmp/tailor-stage-dir"
+		ctx.StageDir = "/tmp/chef-stage-dir"
 	}
 
 	switch {

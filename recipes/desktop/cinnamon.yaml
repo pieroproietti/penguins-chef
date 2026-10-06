@@ -17,7 +17,7 @@ profiles:
       - xdg-user-dirs
       - xdg-user-dirs-gtk
     files:
-      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
@@ -35,7 +35,7 @@ profiles:
       - xdg-user-dirs
       - xdg-user-dirs-gtk
     files:
-      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
@@ -53,7 +53,7 @@ profiles:
       - xdg-user-dirs
       - xdg-user-dirs-gtk
     files:
-      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
@@ -74,7 +74,7 @@ profiles:
       - xdg-user-dirs
       - xdg-user-dirs-gtk
     files:
-      - path: /etc/lightdm/lightdm.conf.d/50-tailor.conf
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter

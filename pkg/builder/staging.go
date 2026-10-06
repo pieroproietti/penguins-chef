@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/context"
+	"github.com/pieroproietti/penguins-chef/pkg/context"
 )
 
 func staging(ctx context.RuntimeContext) string {
@@ -29,7 +29,7 @@ func staging(ctx context.RuntimeContext) string {
 	}
 
 	// 1. Binary
-	copyFile(filepath.Join(buildDir, "tailor"), filepath.Join(stageDir, "usr/bin/tailor"))
+	copyFile(filepath.Join(buildDir, "chef"), filepath.Join(stageDir, "usr/bin/chef"))
 
 	// 2. Documentation (man pages)
 	manFiles, _ := filepath.Glob(filepath.Join(buildDir, "docs/man/*.1"))
@@ -39,21 +39,21 @@ func staging(ctx context.RuntimeContext) string {
 	}
 
 	// 3. Completions
-	src := filepath.Join(buildDir, "docs/completion/tailor.bash")
+	src := filepath.Join(buildDir, "docs/completion/chef.bash")
 	if _, err := os.Stat(src); err == nil {
-		dest := filepath.Join(stageDir, "usr/share/bash-completion/completions/tailor")
+		dest := filepath.Join(stageDir, "usr/share/bash-completion/completions/chef")
 		copyFile(src, dest)
 	}
 
-	src = filepath.Join(buildDir, "docs/completion/tailor.fish")
+	src = filepath.Join(buildDir, "docs/completion/chef.fish")
 	if _, err := os.Stat(src); err == nil {
-		dest := filepath.Join(stageDir, "usr/share/fish/vendor_completions.d/tailor.fish")
+		dest := filepath.Join(stageDir, "usr/share/fish/vendor_completions.d/chef.fish")
 		copyFile(src, dest)
 	}
 
-	src = filepath.Join(buildDir, "docs/completion/tailor.zsh")
+	src = filepath.Join(buildDir, "docs/completion/chef.zsh")
 	if _, err := os.Stat(src); err == nil {
-		dest := filepath.Join(stageDir, "usr/share/zsh/vendor-completions/_tailor")
+		dest := filepath.Join(stageDir, "usr/share/zsh/vendor-completions/_chef")
 		copyFile(src, dest)
 	}
 

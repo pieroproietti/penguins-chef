@@ -45,16 +45,16 @@ func colorize(colorCode string) string {
 
 // --- CENTRALIZED LOGGING SYSTEM ---
 
-// LogNormal prints an informational message with the [tailor] tag
+// LogNormal prints an informational message with the [chef] tag
 func LogNormal(format string, a ...interface{}) {
 	msg := fmt.Sprintf(format, a...)
-	fmt.Printf("%s[tailor]%s %s\n", colorize(ColorCyan), colorize(ColorReset), msg)
+	fmt.Printf("%s[chef]%s %s\n", colorize(ColorCyan), colorize(ColorReset), msg)
 }
 
 // LogSuccess prints a success message
 func LogSuccess(format string, a ...interface{}) {
 	msg := fmt.Sprintf(format, a...)
-	fmt.Printf("%s[tailor]%s %s\n", colorize(ColorGreen), colorize(ColorReset), msg)
+	fmt.Printf("%s[chef]%s %s\n", colorize(ColorGreen), colorize(ColorReset), msg)
 }
 
 // LogWarning prints a warning message

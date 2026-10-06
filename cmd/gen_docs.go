@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pieroproietti/penguins-tailor/pkg/utils"
+	"github.com/pieroproietti/penguins-chef/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
@@ -38,7 +38,7 @@ var genDocsCmd = &cobra.Command{
 		}
 
 		header := &doc.GenManHeader{
-			Title:   "TAILOR",
+			Title:   "CHEF",
 			Section: "1",
 		}
 		if err := doc.GenManTree(rootCmd, header, manDir); err != nil {
@@ -46,9 +46,9 @@ var genDocsCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		rootCmd.GenBashCompletionFile(filepath.Join(compDir, "tailor.bash"))
-		rootCmd.GenZshCompletionFile(filepath.Join(compDir, "tailor.zsh"))
-		rootCmd.GenFishCompletionFile(filepath.Join(compDir, "tailor.fish"), true)
+		rootCmd.GenBashCompletionFile(filepath.Join(compDir, "chef.bash"))
+		rootCmd.GenZshCompletionFile(filepath.Join(compDir, "chef.zsh"))
+		rootCmd.GenFishCompletionFile(filepath.Join(compDir, "chef.fish"), true)
 
 		utils.LogSuccess("[gen_docs] Documentation and completions generated successfully.")
 	},
