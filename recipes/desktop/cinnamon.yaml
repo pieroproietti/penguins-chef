@@ -12,7 +12,7 @@ profiles:
       - cinnamon-desktop-environment
       - gnome-terminal
       - fonts-dejavu-core
-      - firefox-esr
+      # firefox-esr
       - spice-vdagent
       - xdg-user-dirs
       - xdg-user-dirs-gtk

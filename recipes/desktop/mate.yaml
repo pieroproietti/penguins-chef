@@ -12,7 +12,7 @@ profiles:
       - mate-desktop-environment
       - mate-terminal
       - fonts-dejavu-core
-      - firefox-esr
+      # firefox-esr
       - spice-vdagent
       - xdg-user-dirs
       - xdg-user-dirs-gtk

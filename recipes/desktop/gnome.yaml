@@ -11,7 +11,7 @@ profiles:
       - gnome-core
       - gnome-shell-extension-dash-to-panel
       - gnome-terminal
-      - firefox-esr
+      # firefox-esr
       - spice-vdagent
       - xdg-user-dirs
       - xdg-user-dirs-gtk

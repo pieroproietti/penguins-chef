@@ -13,7 +13,7 @@ profiles:
       - openbox
       - pavucontrol-qt
       - fonts-dejavu-core
-      - firefox-esr
+      # firefox-esr
       - spice-vdagent
       - xdg-user-dirs
 
