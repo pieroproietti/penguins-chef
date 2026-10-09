@@ -15,13 +15,14 @@ import (
 // Recipe profiles are complete, explicit definitions rather than implicit
 // merges of distro recipes.
 type Recipe struct {
-	Version  int                `yaml:"version"`
-	Name     string             `yaml:"name"`
-	Hostname string             `yaml:"hostname"`
-	Include  []string           `yaml:"include"`
-	Profiles map[string]Profile `yaml:"profiles"`
-	Sysroot  string             `yaml:"sysroot"`
-	baseDir  string
+	Version     int                `yaml:"version"`
+	Name        string             `yaml:"name"`
+	Description string             `yaml:"description,omitempty"`
+	Hostname    string             `yaml:"hostname"`
+	Include     []string           `yaml:"include"`
+	Profiles    map[string]Profile `yaml:"profiles"`
+	Sysroot     string             `yaml:"sysroot"`
+	baseDir     string
 }
 
 type Profile struct {
@@ -73,12 +74,13 @@ func (r Recipe) resolve(visited map[string]bool) (Recipe, error) {
 	}
 
 	merged := Recipe{
-		Version:  r.Version,
-		Name:     r.Name,
-		Hostname: r.Hostname,
-		Profiles: make(map[string]Profile),
-		Sysroot:  r.Sysroot,
-		baseDir:  r.baseDir,
+		Version:     r.Version,
+		Name:        r.Name,
+		Description: r.Description,
+		Hostname:    r.Hostname,
+		Profiles:    make(map[string]Profile),
+		Sysroot:     r.Sysroot,
+		baseDir:     r.baseDir,
 	}
 
 	for _, inc := range r.Include {
@@ -120,18 +122,22 @@ func (r Recipe) resolve(visited map[string]bool) (Recipe, error) {
 
 func mergeRecipes(base, override Recipe) Recipe {
 	res := Recipe{
-		Version:  base.Version,
-		Name:     base.Name,
-		Hostname: base.Hostname,
-		Profiles: make(map[string]Profile),
-		Sysroot:  base.Sysroot,
-		baseDir:  base.baseDir,
+		Version:     base.Version,
+		Name:        base.Name,
+		Description: base.Description,
+		Hostname:    base.Hostname,
+		Profiles:    make(map[string]Profile),
+		Sysroot:     base.Sysroot,
+		baseDir:     base.baseDir,
 	}
 	if override.Version != 0 {
 		res.Version = override.Version
 	}
 	if override.Name != "" {
 		res.Name = override.Name
+	}
+	if override.Description != "" {
+		res.Description = override.Description
 	}
 	if override.Hostname != "" {
 		res.Hostname = override.Hostname

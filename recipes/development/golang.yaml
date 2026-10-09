@@ -1,5 +1,6 @@
 version: 1
 name: golang
+description: Go programming language compiler and toolchain
 
 profiles:
   debian:

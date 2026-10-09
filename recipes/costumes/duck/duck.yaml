@@ -1,5 +1,6 @@
 version: 1
 name: duck
+description: "Duck costume: Cinnamon desktop with LightDM and customized theme"
 hostname: duck
 
 include:

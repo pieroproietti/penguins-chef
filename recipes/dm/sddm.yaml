@@ -1,5 +1,6 @@
 version: 1
 name: sddm
+description: Simple Desktop Display Manager (SDDM) service and configuration
 
 profiles:
   debian:

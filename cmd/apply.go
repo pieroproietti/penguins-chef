@@ -7,21 +7,52 @@ import (
 
 	"github.com/pieroproietti/penguins-chef/pkg/distro"
 	"github.com/pieroproietti/penguins-chef/pkg/provision"
+	"github.com/pieroproietti/penguins-chef/pkg/tui"
 	"github.com/spf13/cobra"
+)
+
+var (
+	runRecipePickerFn = tui.Run
+	isTerminalFn      = func(f *os.File) bool {
+		if f == nil {
+			return false
+		}
+		stat, err := f.Stat()
+		if err != nil {
+			return false
+		}
+		return (stat.Mode() & os.ModeCharDevice) != 0
+	}
 )
 
 func applyCmd() *cobra.Command {
 	var dryRun bool
 	var family, initSystem, sysroot string
 	cmd := &cobra.Command{
-		Use:   "apply <recipe.yaml>",
+		Use:   "apply [recipe.yaml]",
 		Short: "Apply an experimental operation-based recipe",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !dryRun && (family != "" || initSystem != "") {
 				return fmt.Errorf("--family and --init are only allowed with --dry-run")
 			}
-			f, err := os.Open(args[0])
+			var recipePath string
+			if len(args) == 1 {
+				recipePath = args[0]
+			} else {
+				if !isTerminalFn(os.Stdin) || !isTerminalFn(os.Stdout) {
+					return fmt.Errorf("recipe argument required in non-interactive mode")
+				}
+				selected, err := runRecipePickerFn()
+				if err != nil {
+					return err
+				}
+				if selected == "" {
+					return nil
+				}
+				recipePath = selected
+			}
+			f, err := os.Open(recipePath)
 			if err != nil {
 				return err
 			}

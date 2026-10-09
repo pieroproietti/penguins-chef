@@ -1,5 +1,6 @@
 version: 1
 name: colibri
+description: Lightweight XFCE desktop with LightDM and Whisker Menu
 hostname: colibri
 
 include:

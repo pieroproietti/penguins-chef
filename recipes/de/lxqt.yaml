@@ -1,5 +1,6 @@
 version: 1
 name: lxqt-desktop
+description: Lightweight LXQt desktop environment
 
 profiles:
   debian:

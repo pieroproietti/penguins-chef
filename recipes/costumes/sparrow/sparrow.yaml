@@ -1,5 +1,6 @@
 version: 1
 name: sparrow
+description: "Sparrow costume: MATE desktop with LightDM and customized theme"
 hostname: sparrow
 
 include:

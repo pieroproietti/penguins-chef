@@ -1,5 +1,6 @@
 version: 1
 name: gimp
+description: GNU Image Manipulation Program (GIMP) image editor
 
 profiles:
   debian:

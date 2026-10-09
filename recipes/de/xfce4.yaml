@@ -1,5 +1,6 @@
 version: 1
 name: xfce4-desktop
+description: Lightweight and fast XFCE4 desktop environment
 
 profiles:
   debian:

@@ -1,5 +1,6 @@
 version: 1
 name: cinnamon-desktop
+description: Cinnamon desktop environment with essential apps and utilities
 
 profiles:
   debian:

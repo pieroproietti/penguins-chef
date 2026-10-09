@@ -1,5 +1,6 @@
 version: 1
 name: albatros
+description: "Albatros costume: KDE Plasma desktop with SDDM and KDE utilities"
 hostname: albatros
 
 include:

@@ -1,5 +1,6 @@
 version: 1
 name: mate-desktop
+description: MATE desktop environment with traditional desktop experience
 
 profiles:
   debian:

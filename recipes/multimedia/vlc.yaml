@@ -1,5 +1,6 @@
 version: 1
 name: vlc
+description: VLC media player for audio and video playback
 
 profiles:
   debian:

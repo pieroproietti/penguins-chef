@@ -1,5 +1,6 @@
 version: 1
 name: libreoffice
+description: LibreOffice full office productivity suite
 
 profiles:
   debian:

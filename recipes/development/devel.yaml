@@ -1,5 +1,6 @@
 version: 1
 name: devel
+description: Core development tools, compilers, and build essentials
 
 include:
   - ../base/base.yaml

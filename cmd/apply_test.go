@@ -126,3 +126,69 @@ func TestApplyDryRunDevuanDefaultsToSysvinit(t *testing.T) {
 	}
 }
 
+func TestApplyWithoutArgsNonInteractive(t *testing.T) {
+	origIsTerm := isTerminalFn
+	defer func() { isTerminalFn = origIsTerm }()
+	isTerminalFn = func(f *os.File) bool { return false }
+
+	cmd := applyCmd()
+	cmd.SetArgs([]string{})
+	err := cmd.Execute()
+	if err == nil || !strings.Contains(err.Error(), "recipe argument required in non-interactive mode") {
+		t.Fatalf("expected non-interactive error, got: %v", err)
+	}
+}
+
+func TestApplyWithoutArgsInteractiveCancelled(t *testing.T) {
+	origIsTerm := isTerminalFn
+	origPicker := runRecipePickerFn
+	defer func() {
+		isTerminalFn = origIsTerm
+		runRecipePickerFn = origPicker
+	}()
+
+	isTerminalFn = func(f *os.File) bool { return true }
+	runRecipePickerFn = func(dirs ...string) (string, error) {
+		return "", nil // simulated cancellation
+	}
+
+	cmd := applyCmd()
+	cmd.SetArgs([]string{})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected nil error on cancelled picker, got: %v", err)
+	}
+}
+
+func TestApplyWithoutArgsInteractiveSelected(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	origIsTerm := isTerminalFn
+	origPicker := runRecipePickerFn
+	defer func() {
+		isTerminalFn = origIsTerm
+		runRecipePickerFn = origPicker
+	}()
+
+	dir := t.TempDir()
+	recipe := filepath.Join(dir, "recipe.yaml")
+	text := "version: 1\nname: interactive-test\ndescription: \"Interactive test recipe\"\nprofiles:\n  debian:\n    packages: [curl]\n"
+	if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	isTerminalFn = func(f *os.File) bool { return true }
+	runRecipePickerFn = func(dirs ...string) (string, error) {
+		return recipe, nil
+	}
+
+	cmd := applyCmd()
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetArgs([]string{"--dry-run", "--family", "debian"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("apply with picker failed: %v", err)
+	}
+	if !strings.Contains(out.String(), "interactive-test") || !strings.Contains(out.String(), "packages:install") {
+		t.Fatalf("unexpected plan output: %s", out.String())
+	}
+}
+

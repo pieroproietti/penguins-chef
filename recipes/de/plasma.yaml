@@ -1,5 +1,6 @@
 version: 1
 name: plasma-desktop
+description: KDE Plasma desktop environment and core applications
 
 profiles:
   debian:

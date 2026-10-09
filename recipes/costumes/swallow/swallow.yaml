@@ -1,5 +1,6 @@
 version: 1
 name: swallow
+description: "Swallow costume: LXQt desktop with SDDM and customized theme"
 hostname: swallow
 
 include:

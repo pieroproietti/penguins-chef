@@ -1,5 +1,6 @@
 version: 1
 name: music-pro
+description: Professional music production workstation with DAWs and audio plugins
 
 profiles:
   debian:
