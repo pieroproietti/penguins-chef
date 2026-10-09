@@ -245,6 +245,21 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 	recipe = resolved
 	plan := Plan{Name: recipe.Name, Family: family, Init: init}
 	profile, ok := recipe.Profiles[family]
+	if subProfile, hasSub := recipe.Profiles[family+":"+init]; hasSub {
+		if ok {
+			profile = mergeProfiles(profile, subProfile)
+		} else {
+			profile = subProfile
+			ok = true
+		}
+	} else if subProfile, hasSub := recipe.Profiles[family+"/"+init]; hasSub {
+		if ok {
+			profile = mergeProfiles(profile, subProfile)
+		} else {
+			profile = subProfile
+			ok = true
+		}
+	}
 	if !ok {
 		return plan, fmt.Errorf("no explicit profile for %q", family)
 	}
@@ -294,17 +309,22 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 	for _, f := range profile.Repositories {
 		plan.Steps = append(plan.Steps, Step{ID: "repository:" + f.Path, Phase: "repositories", File: &f})
 	}
-	if len(profile.Packages) > 0 || len(profile.Repositories) > 0 {
-		plan.Steps = append(plan.Steps, Step{ID: "repositories:prepare", Phase: "repositories", Command: backend.prepare()})
-	}
 	seen := map[string]bool{}
 	var packages []string
 	for _, pkg := range profile.Packages {
 		if seen[pkg] {
 			continue
 		}
+		if family == "debian" && init != "systemd" && isSystemdSpecificPackage(pkg) {
+			continue
+		}
 		seen[pkg] = true
 		packages = append(packages, pkg)
+	}
+	if len(packages) > 0 || len(profile.Repositories) > 0 {
+		plan.Steps = append(plan.Steps, Step{ID: "repositories:prepare", Phase: "repositories", Command: backend.prepare()})
+	}
+	for _, pkg := range packages {
 		plan.Steps = append(plan.Steps, Step{ID: "available:" + pkg, Phase: "repositories", Availability: backend.availability(pkg)})
 	}
 	// Verify availability of ALL targets before installing any of them. Install
@@ -342,4 +362,8 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 		}
 	}
 	return plan, nil
+}
+
+func isSystemdSpecificPackage(pkg string) bool {
+	return pkg == "systemd" || strings.HasPrefix(pkg, "systemd-")
 }

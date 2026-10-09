@@ -481,6 +481,111 @@ func TestDebianAPTTrustsPackageServiceManagementOnNonSystemdInit(t *testing.T) {
 	}
 }
 
+func TestBaseRecipeConditionalSystemdPackages(t *testing.T) {
+	f, err := os.Open("../../recipes/base/base.yaml")
+	if err != nil {
+		t.Fatalf("failed to open base.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load base.yaml: %v", err)
+	}
+
+	// 1. With systemd on debian, systemd-timesyncd is included in packages and services
+	planSystemd, err := Build(recipe, "debian", "systemd")
+	if err != nil {
+		t.Fatalf("Build failed for base debian with systemd: %v", err)
+	}
+	hasTimesyncdPkg := false
+	hasTimesyncdSvc := false
+	for _, step := range planSystemd.Steps {
+		if step.ID == "packages:install" {
+			for _, pkg := range step.Packages {
+				if pkg == "systemd-timesyncd" {
+					hasTimesyncdPkg = true
+				}
+			}
+		}
+		if step.ID == "service:systemd-timesyncd.service" {
+			hasTimesyncdSvc = true
+		}
+	}
+	if !hasTimesyncdPkg {
+		t.Fatal("expected systemd-timesyncd in packages for debian with systemd")
+	}
+	if !hasTimesyncdSvc {
+		t.Fatal("expected systemd-timesyncd.service in services for debian with systemd")
+	}
+
+	// 2. With non-systemd (e.g. sysv, sysvinit, openrc) on debian, systemd-timesyncd is excluded
+	for _, initName := range []string{"sysv", "sysvinit", "openrc", "unknown"} {
+		t.Run("non-systemd-"+initName, func(t *testing.T) {
+			planNonSystemd, err := Build(recipe, "debian", initName)
+			if err != nil {
+				t.Fatalf("Build failed for base debian with init %s: %v", initName, err)
+			}
+			for _, step := range planNonSystemd.Steps {
+				if step.ID == "packages:install" {
+					for _, pkg := range step.Packages {
+						if pkg == "systemd-timesyncd" {
+							t.Fatalf("unexpected systemd-timesyncd in packages for debian with init %s", initName)
+						}
+					}
+				}
+				if step.Service != "" {
+					t.Fatalf("unexpected service step %s for debian with init %s", step.ID, initName)
+				}
+			}
+		})
+	}
+}
+
+func TestDebianExcludesSystemdPackagesOnNonSystemdInit(t *testing.T) {
+	// Even if a recipe explicitly declares systemd-timesyncd in generic debian packages,
+	// building for non-systemd debian excludes it to prevent blocking availability checks on Devuan.
+	r := Recipe{
+		Version: 1,
+		Name:    "legacy-recipe",
+		Profiles: map[string]Profile{
+			"debian": {
+				Packages: []string{"curl", "systemd-timesyncd", "systemd-resolved", "git"},
+			},
+		},
+	}
+
+	planSysv, err := Build(r, "debian", "sysv")
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+	for _, step := range planSysv.Steps {
+		if step.ID == "packages:install" {
+			expected := []string{"curl", "git"}
+			if !reflect.DeepEqual(step.Packages, expected) {
+				t.Fatalf("packages = %v, want %v", step.Packages, expected)
+			}
+		}
+		if strings.HasPrefix(step.ID, "available:systemd-") {
+			t.Fatalf("unexpected availability check: %s", step.ID)
+		}
+	}
+
+	// On systemd, all packages are preserved
+	planSystemd, err := Build(r, "debian", "systemd")
+	if err != nil {
+		t.Fatalf("Build failed: %v", err)
+	}
+	for _, step := range planSystemd.Steps {
+		if step.ID == "packages:install" {
+			expected := []string{"curl", "systemd-timesyncd", "systemd-resolved", "git"}
+			if !reflect.DeepEqual(step.Packages, expected) {
+				t.Fatalf("packages = %v, want %v", step.Packages, expected)
+			}
+		}
+	}
+}
+
 func TestStrictSchema(t *testing.T) {
 	for _, input := range []string{
 		"version: 1\nname: test\nprofiles:\n  debian:\n    package: [lightdm]\n",

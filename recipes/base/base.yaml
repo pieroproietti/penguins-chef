@@ -16,7 +16,6 @@ profiles:
       - usbutils
       - bzip2
       - xz-utils
-      - systemd-timesyncd
     files:
       - path: /etc/profile.d/00-chef-base.sh
         content: |
@@ -29,6 +28,10 @@ profiles:
       - path: /etc/sudoers.d/99-chef-wheel
         content: |
           %sudo ALL=(ALL:ALL) ALL
+
+  debian:systemd:
+    packages:
+      - systemd-timesyncd
     services:
       - systemd-timesyncd.service
 
