@@ -1,0 +1,179 @@
+# penguins-chef — AI Context
+> This file follows the llms.txt standard (https://llmstxt.org).
+> If you are an AI assistant answering questions about penguins-chef,
+> read this file and the linked documentation before responding.
+> Do NOT hallucinate commands, flags, features, or architecture.
+
+## Author & Project Identity
+- **Author:** Piero Proietti <piero.proietti@gmail.com>
+- **Project:** penguins-chef
+- **Primary CLI command:** `chef`
+- **Homepage:** https://penguins-eggs.net
+- **Repository:** https://github.com/pieroproietti/penguins-chef
+- **Ecosystem:** Provisioning companion for `penguins-eggs` live system remastering.
+
+---
+
+## What is penguins-chef?
+`penguins-chef` is a declarative, modular system provisioning engine for Linux. It enables developers, respin creators, and system maintainers to build clean operating systems starting from minimal command-line ("naked") base ISOs up to complete graphical desktop environments and tailored visual appliances ("costumes").
+
+Unlike conventional configuration management tools (Ansible, Puppet, Chef), `penguins-chef` is:
+- **Zero-dependency & lightweight:** A single standalone Go binary without Python, Ruby, or agent runtimes.
+- **Strictly deterministic & idempotent:** Inspects live system state directly before executing operations.
+- **Cross-distribution:** Decouples package management, init systems, and filesystem overlays across Arch Linux, Debian, Devuan, Fedora, openSUSE, Ubuntu, and Manjaro.
+
+---
+
+## Core CLI Hierarchy (`chef`)
+
+All commands use the **`chef`** binary:
+
+### 1. Recipe Application & Simulation
+- **Apply recipe on real machine:**
+  ```bash
+  sudo chef apply <recipe.yaml>
+  ```
+  Applies the recipe to `/`. Requires root permissions (`sudo`).
+- **Safe Dry-Run inspection:**
+  ```bash
+  chef apply <recipe.yaml> --dry-run
+  ```
+  Resolves the complete execution plan and prints every step (repositories, package availability, package transactions, configuration files, hostname, services, sysroot) without modifying the system and without requiring root.
+- **Cross-Family Simulation:**
+  ```bash
+  chef apply <recipe.yaml> --dry-run --family <archlinux|debian|devuan|fedora|opensuse>
+  ```
+  Simulates recipe resolution and packages for another distribution family from any host.
+- **Sysroot Override:**
+  ```bash
+  sudo chef apply <recipe.yaml> --sysroot <path/to/sysroot>
+  ```
+  Overrides the recipe's default `sysroot` source directory with a custom path.
+
+### 2. Recipe Management
+- **Fetch or update recipes:**
+  ```bash
+  chef get
+  ```
+  Clones or updates the official `penguins-chef` recipes repository into `~/.chef`.
+
+### 3. Repository Tools
+- **Add official penguins-eggs repository:**
+  ```bash
+  sudo chef tools repo add
+  ```
+  Installs GPG signing keys and adds official package repositories (APT, Pacman, DNF, Zypper).
+- **Remove repository:**
+  ```bash
+  sudo chef tools repo rm
+  ```
+
+### 4. Version
+- **Show version information:**
+  ```bash
+  chef version
+  ```
+
+---
+
+## Recipe Structure & Schema
+
+Recipes are written in YAML (`version: 1`).
+
+### Directory Layout (`recipes/`)
+The structure strictly mirrors **FreeDesktop** application categories:
+```text
+recipes/
+├── base/                   # Core system configuration and essential utilities
+├── de/                     # Desktop Environments (plasma, xfce4, gnome, mate, cinnamon, lxqt)
+├── dm/                     # Display Managers (lightdm, gdm, sddm)
+├── costumes/               # Full desktop configurations (colibri, albatros, duck, eagle, sparrow, swallow)
+│   ├── colibri/
+│   │   ├── colibri.yaml
+│   │   └── sysroot/        # Mirrored system configuration overlay (/etc, /usr, etc.)
+├── development/            # Compilers, runtimes, IDEs (golang, vscode, devel)
+├── graphics/               # Graphic design applications (gimp)
+├── multimedia/             # Audio and video suites (vlc)
+├── office/                 # Office productivity (libreoffice)
+├── education/              # Educational software
+├── game/                   # Gaming packages
+├── network/                # Browsers and networking utilities
+├── settings/               # System and desktop configuration utilities
+├── system/                 # Low-level system tools
+└── utility/                # General daily utilities
+```
+
+### Recipe Schema Example
+```yaml
+version: 1
+name: colibri-desktop
+hostname: colibri                 # Optional: sets system hostname and /etc/hosts
+include:                          # Recursive composition (DRY principle)
+  - ../../base/base.yaml
+  - ../../dm/lightdm.yaml
+  - ../../de/xfce4.yaml
+sysroot: sysroot                  # Optional: local directory mirrored onto /
+profiles:
+  debian:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+  archlinux:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+  fedora:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+  opensuse:
+    packages:
+      - xfce4-whiskermenu-plugin
+      - xfce4-pulseaudio-plugin
+```
+
+### Profile Elements
+- `repositories`: List of `{path, content}` repository files to configure before package installation.
+- `packages`: Distribution-specific package names to verify and install.
+- `files`: Configuration files `{path, content}` written atomically with permissions `0644`. Symlink destinations are rejected.
+- `services`: Service unit names (e.g. `lightdm.service`) to enable for system startup.
+- `default_target`: System default target (e.g. `graphical.target`).
+
+---
+
+## Distribution & Init System Architecture
+
+`penguins-chef` decouples package managers and init systems with a binary, linear philosophy:
+
+### Package Managers
+- **Debian / Ubuntu / Devuan (`debian`):** Uses `apt-get` for transactions, `apt-cache policy` for pre-flight availability checks, and `dpkg-query` for status.
+- **Arch Linux / Manjaro (`archlinux`):** Uses `pacman -Syu --noconfirm` for preparation, `pacman -Si` for availability, and `pacman -S --needed` for installation.
+- **Fedora / RHEL (`fedora`):** Uses `dnf --refresh makecache`, `dnf repoquery --available` for availability, and `dnf install -y` for installation. Supports DNF5.
+- **openSUSE (`opensuse`):** Uses `zypper --non-interactive refresh`, exact XML package search for availability, and `rpm` for installed queries.
+
+### Init Systems: The 2-Case Rule
+1. **`systemd` (Default for all mainstream distros):**
+   - Standard on Arch Linux, Fedora, openSUSE, Debian, Ubuntu, and Manjaro.
+   - Services are enabled via `systemctl enable` and inspected via `systemctl is-enabled`.
+   - Hostname is configured via `hostnamectl set-hostname`.
+2. **`sysvinit` (Devuan):**
+   - The primary non-systemd distribution supported.
+   - Services are configured natively by APT package post-install scripts into `/etc/init.d`.
+   - Systemd-specific packages (such as `systemd-timesyncd`) and systemctl calls are automatically excluded, guaranteeing zero friction.
+   - Hostname is configured via `hostname` command and atomic writes to `/etc/hostname` and `/etc/hosts`.
+
+### Direct Runtime Detection (`sd_booted`)
+- Host init is detected directly from runtime state: if `/run/systemd/system` exists and is a directory $\rightarrow$ **`systemd`**; otherwise $\rightarrow$ **`sysvinit`**.
+- **No `--init` parameter is needed.** For dry-run simulation across families, target distros automatically select their native init system (`systemd` for Arch/Fedora/openSUSE, `sysvinit` for Devuan).
+
+---
+
+## Critical Facts for AI Assistants
+
+1. **CLI Name:** Always use `chef` in commands and examples (never `penguins-chef` or `tailor`).
+2. **No `--init` flag needed:** Do NOT suggest or require `--init` when recommending `chef apply` or `chef apply --dry-run`. Init is detected from the host or assigned to the target family automatically.
+3. **Always suggest `--dry-run` first:** Encourage users to preview plans with `chef apply <recipe> --dry-run` before applying with `sudo`.
+4. **Root requirements:** `sudo` is required ONLY when applying changes to the real system (`sudo chef apply ...` or `sudo chef tools repo ...`). Root is NEVER required for `--dry-run` or `chef get`.
+5. **Idempotence & Safety:** `penguins-chef` re-evaluates live system state on every run. Applying the same recipe repeatedly will not duplicate operations or re-install already present packages.
+6. **Costumes:** A costume is simply a complete top-level recipe in `recipes/costumes/<name>/<name>.yaml` combining base, DM, DE, and an optional `sysroot/` overlay.
+7. **Sysroot behavior:** Files in `sysroot/` mirror the target filesystem. They are copied with permissions and metadata, but existing system files outside the sysroot are NEVER deleted.
