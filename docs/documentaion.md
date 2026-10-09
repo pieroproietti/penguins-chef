@@ -102,16 +102,16 @@ profiles:
 Before making any changes to the system, always inspect the fully resolved execution plan using `--dry-run`:
 
 ```bash
-# Simulate LightDM provisioning across different families
-go run . apply examples/provision/lightdm.yaml --dry-run --family debian --init systemd
-go run . apply examples/provision/lightdm.yaml --dry-run --family archlinux --init systemd
+# Simulate LightDM provisioning across different families (no init parameter needed)
+go run . apply recipes/dm/lightdm.yaml --dry-run --family debian
+go run . apply recipes/dm/lightdm.yaml --dry-run --family archlinux
 
 # Simulate Colibri desktop provisioning on Arch Linux
-go run . apply examples/provision/colibri.yaml --dry-run --family archlinux --init systemd
+go run . apply recipes/costumes/colibri/colibri.yaml --dry-run --family archlinux
 ```
 
 ### Applying a Recipe on a Real Host
-On a target machine where family and systemd are automatically detected by the host:
+On a target machine, the package family and native init system (systemd, sysvinit, openrc) are automatically detected from the host:
 
 ```bash
 # Apply a specific display manager

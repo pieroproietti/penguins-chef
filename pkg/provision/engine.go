@@ -204,10 +204,7 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 	}
 	if s.DefaultTarget != "" {
 		if _, err := initFor(p.Init); err != nil {
-			if p.Family == "debian" {
-				return nil
-			}
-			return err
+			return nil
 		}
 		check := []string{"systemctl", "get-default"}
 		out, err := r.Output(ctx, check)
@@ -233,10 +230,7 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 	if s.Service != "" {
 		backend, err := initFor(p.Init)
 		if err != nil {
-			if p.Family == "debian" {
-				return nil
-			}
-			return err
+			return nil
 		}
 		check := backend.check(s.Service)
 		// openSUSE and Arch derivatives may retain another display-manager alias. Selecting

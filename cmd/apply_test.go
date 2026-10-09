@@ -27,7 +27,7 @@ func TestApplyDryRunDoesNotExecuteOrWrite(t *testing.T) {
 			cmd := applyCmd()
 			var out bytes.Buffer
 			cmd.SetOut(&out)
-			cmd.SetArgs([]string{recipe, "--dry-run", "--family", family, "--init", "systemd", "--sysroot", sysroot})
+			cmd.SetArgs([]string{recipe, "--dry-run", "--family", family, "--sysroot", sysroot})
 			if err := cmd.Execute(); err != nil {
 				t.Fatal(err)
 			}
@@ -74,6 +74,55 @@ func TestApplyDryRunDebianAlternativeInit(t *testing.T) {
 				t.Fatalf("missing packages:install in plan for debian with init %s: %s", initName, out.String())
 			}
 		})
+	}
+}
+
+func TestApplyDryRunCrossFamilyWithoutInit(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	for _, family := range []string{"archlinux", "fedora", "opensuse"} {
+		t.Run(family, func(t *testing.T) {
+			dir := t.TempDir()
+			recipe := filepath.Join(dir, "recipe.yaml")
+			text := "version: 1\nname: test\nprofiles:\n  " + family + ":\n    packages: [lightdm]\n    services: [lightdm.service]\n"
+			if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
+				t.Fatal(err)
+			}
+			cmd := applyCmd()
+			var out bytes.Buffer
+			cmd.SetOut(&out)
+			// Notice: absolutely no --init parameter passed
+			cmd.SetArgs([]string{recipe, "--dry-run", "--family", family})
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("cross-family dry-run failed for %s without --init: %v", family, err)
+			}
+			if !strings.Contains(out.String(), "[init]") || !strings.Contains(out.String(), "service:lightdm.service") {
+				t.Fatalf("expected init phase with service in plan for %s: %s", family, out.String())
+			}
+		})
+	}
+}
+
+func TestApplyDryRunDevuanDefaultsToSysvinit(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	dir := t.TempDir()
+	recipe := filepath.Join(dir, "recipe.yaml")
+	text := "version: 1\nname: test\nprofiles:\n  debian:\n    packages: [lightdm]\n    services: [lightdm.service]\n"
+	if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
+		t.Fatal(err)
+	}
+	cmd := applyCmd()
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	// Testing --family devuan without any --init parameter
+	cmd.SetArgs([]string{recipe, "--dry-run", "--family", "devuan"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("dry-run failed for devuan: %v", err)
+	}
+	if !strings.Contains(out.String(), "packages: debian, init: sysvinit") {
+		t.Fatalf("expected debian with sysvinit for devuan dry-run, got: %s", out.String())
+	}
+	if strings.Contains(out.String(), "[init]") {
+		t.Fatalf("unexpected [init] phase for devuan: %s", out.String())
 	}
 }
 

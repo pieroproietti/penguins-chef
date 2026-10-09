@@ -272,13 +272,6 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 		hostname = recipe.Name
 	}
 	_, initErr := initFor(init)
-	if family != "debian" {
-		if len(profile.Services) > 0 || profile.DefaultTarget != "" || hostname != "" {
-			if initErr != nil {
-				return plan, initErr
-			}
-		}
-	}
 	if profile.DefaultTarget != "" && (!identifier.MatchString(profile.DefaultTarget) || !strings.HasSuffix(profile.DefaultTarget, ".target")) {
 		return plan, fmt.Errorf("invalid default target %q", profile.DefaultTarget)
 	}

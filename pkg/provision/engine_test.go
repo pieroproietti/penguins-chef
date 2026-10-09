@@ -349,7 +349,6 @@ func TestBuildRejectsInvalidProfiles(t *testing.T) {
 		name, family, init string
 		profile            Profile
 	}{
-		{"init", "fedora", "sysv", Profile{Services: []string{"lightdm"}}},
 		{"backend", "alpine", "systemd", Profile{}},
 		{"argument", "debian", "systemd", Profile{Packages: []string{"--purge"}}},
 		{"relative", "debian", "systemd", Profile{Files: []File{{Path: "etc/config"}}}},
@@ -462,9 +461,9 @@ func TestDebianAPTTrustsPackageServiceManagementOnNonSystemdInit(t *testing.T) {
 		}
 	})
 
-	// Verify that non-APT distributions still reject unsupported init
+	// Verify that non-systemd init is tolerated across all distributions without blocking
 	for _, fam := range []string{"fedora", "archlinux", "opensuse"} {
-		t.Run("non-apt-"+fam, func(t *testing.T) {
+		t.Run("tolerant-"+fam, func(t *testing.T) {
 			famRecipe := Recipe{
 				Version: 1,
 				Name:    "test",
@@ -474,8 +473,14 @@ func TestDebianAPTTrustsPackageServiceManagementOnNonSystemdInit(t *testing.T) {
 					},
 				},
 			}
-			if _, err := Build(famRecipe, fam, "sysv"); err == nil {
-				t.Fatalf("expected Build to fail for %s with sysv", fam)
+			plan, err := Build(famRecipe, fam, "sysv")
+			if err != nil {
+				t.Fatalf("expected Build to succeed for %s with sysv, got %v", fam, err)
+			}
+			for _, step := range plan.Steps {
+				if step.Service != "" {
+					t.Fatalf("unexpected service step for %s with sysv: %s", fam, step.ID)
+				}
 			}
 		})
 	}
@@ -687,8 +692,14 @@ func TestDefaultTargetValidation(t *testing.T) {
 			t.Fatalf("accepted %q", target)
 		}
 	}
-	if _, err := Build(Recipe{Profiles: map[string]Profile{"fedora": {DefaultTarget: "graphical.target"}}}, "fedora", "sysv"); err == nil {
-		t.Fatal("accepted unsupported init")
+	plan, err := Build(Recipe{Profiles: map[string]Profile{"fedora": {DefaultTarget: "graphical.target"}}}, "fedora", "sysv")
+	if err != nil {
+		t.Fatalf("unexpected Build failure with sysv: %v", err)
+	}
+	for _, step := range plan.Steps {
+		if step.DefaultTarget != "" {
+			t.Fatalf("unexpected default-target step with sysv: %s", step.ID)
+		}
 	}
 }
 
@@ -1074,9 +1085,19 @@ func TestCostumeHostnameInBuild(t *testing.T) {
 		}
 	}
 
-	// Unsupported init with hostname
-	if _, err := Build(r1, "fedora", "sysv"); err == nil {
-		t.Fatal("Build accepted sysv init with hostname step")
+	// Hostname step is preserved with alternative init
+	pSysv, err := Build(r1, "fedora", "sysv")
+	if err != nil {
+		t.Fatalf("Build failed with sysv: %v", err)
+	}
+	hasHostStep := false
+	for _, step := range pSysv.Steps {
+		if step.Hostname == "myhost" {
+			hasHostStep = true
+		}
+	}
+	if !hasHostStep {
+		t.Fatal("expected hostname step in plan with sysv")
 	}
 }
 
