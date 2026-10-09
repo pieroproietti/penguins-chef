@@ -1,0 +1,190 @@
+version: 1
+name: music-pro
+
+profiles:
+  debian:
+    packages:
+      # PipeWire audio server & low-latency routing
+      - pipewire
+      - pipewire-audio
+      - pipewire-alsa
+      - pipewire-pulse
+      - pipewire-jack
+      - wireplumber
+      - rtkit
+      - qpwgraph
+      # Digital Audio Workstation (DAW)
+      - ardour
+      # Essential audio plugins (LV2, LADSPA, CLAP, VST)
+      - calf-plugins
+      - lsp-plugins
+      - swh-plugins
+      - tap-plugins
+      - caps
+      - mda-lv2
+      - eq10q
+      - x42-plugins
+      - dragonfly-reverb
+      - zam-plugins
+      - guitarix
+      - fluid-soundfont-gm
+    files:
+      - path: /etc/security/limits.d/99-realtime-audio.conf
+        content: |
+          # Realtime audio priority limits for professional audio production
+          @audio    - rtprio   95
+          @audio    - memlock  unlimited
+          @audio    - nice    -19
+
+          @pipewire - rtprio   95
+          @pipewire - memlock  unlimited
+          @pipewire - nice    -19
+      - path: /etc/sysctl.d/99-realtime-audio.conf
+        content: |
+          # Optimize system parameters for low-latency audio processing
+          fs.inotify.max_user_watches = 524288
+          vm.swappiness = 10
+      - path: /etc/udev/rules.d/99-realtime-audio.rules
+        content: |
+          # Grant audio group access to high-resolution hardware timers
+          KERNEL=="rtc0", GROUP="audio", MODE="0660"
+          KERNEL=="hpet", GROUP="audio", MODE="0660"
+
+  archlinux:
+    packages:
+      # PipeWire audio server & low-latency routing
+      - pipewire
+      - pipewire-audio
+      - pipewire-alsa
+      - pipewire-pulse
+      - pipewire-jack
+      - wireplumber
+      - rtkit
+      - qpwgraph
+      # Digital Audio Workstation (DAW)
+      - ardour
+      # Essential audio plugins (LV2, LADSPA, CLAP, VST)
+      - calf
+      - lsp-plugins
+      - swh-plugins
+      - tap-plugins
+      - caps
+      - mda-lv2
+      - eq10q
+      - x42-plugins
+      - dragonfly-reverb
+      - zam-plugins
+      - guitarix
+      - soundfont-fluid
+    files:
+      - path: /etc/security/limits.d/99-realtime-audio.conf
+        content: |
+          # Realtime audio priority limits for professional audio production
+          @audio      - rtprio   95
+          @audio      - memlock  unlimited
+          @audio      - nice    -19
+
+          @realtime   - rtprio   95
+          @realtime   - memlock  unlimited
+          @realtime   - nice    -19
+
+          @pipewire   - rtprio   95
+          @pipewire   - memlock  unlimited
+          @pipewire   - nice    -19
+      - path: /etc/sysctl.d/99-realtime-audio.conf
+        content: |
+          # Optimize system parameters for low-latency audio processing
+          fs.inotify.max_user_watches = 524288
+          vm.swappiness = 10
+      - path: /etc/udev/rules.d/99-realtime-audio.rules
+        content: |
+          # Grant audio group access to high-resolution hardware timers
+          KERNEL=="rtc0", GROUP="audio", MODE="0660"
+          KERNEL=="hpet", GROUP="audio", MODE="0660"
+
+  fedora:
+    packages:
+      # PipeWire audio server & low-latency routing
+      - pipewire
+      - pipewire-alsa
+      - pipewire-pulseaudio
+      - pipewire-jack-audio-connection-kit
+      - wireplumber
+      - rtkit
+      - qpwgraph
+      # Digital Audio Workstation (DAW)
+      - ardour
+      # Essential audio plugins (LV2, LADSPA, CLAP, VST)
+      - calf
+      - lsp-plugins
+      - swh-plugins
+      - tap-plugins
+      - caps
+      - mda-lv2
+      - eq10q
+      - x42-plugins
+      - zam-plugins
+      - guitarix
+    files:
+      - path: /etc/security/limits.d/99-realtime-audio.conf
+        content: |
+          # Realtime audio priority limits for professional audio production
+          @audio    - rtprio   95
+          @audio    - memlock  unlimited
+          @audio    - nice    -19
+
+          @pipewire - rtprio   95
+          @pipewire - memlock  unlimited
+          @pipewire - nice    -19
+      - path: /etc/sysctl.d/99-realtime-audio.conf
+        content: |
+          # Optimize system parameters for low-latency audio processing
+          fs.inotify.max_user_watches = 524288
+          vm.swappiness = 10
+      - path: /etc/udev/rules.d/99-realtime-audio.rules
+        content: |
+          # Grant audio group access to high-resolution hardware timers
+          KERNEL=="rtc0", GROUP="audio", MODE="0660"
+          KERNEL=="hpet", GROUP="audio", MODE="0660"
+
+  opensuse:
+    packages:
+      # PipeWire audio server & low-latency routing
+      - pipewire
+      - pipewire-alsa
+      - pipewire-pulseaudio
+      - pipewire-jack
+      - wireplumber
+      - rtkit
+      - qpwgraph
+      # Digital Audio Workstation (DAW)
+      - ardour
+      # Essential audio plugins (LV2, LADSPA, CLAP, VST)
+      - calf
+      - lsp-plugins
+      - swh-plugins
+      - tap-plugins
+      - caps
+      - mda-lv2
+      - guitarix
+    files:
+      - path: /etc/security/limits.d/99-realtime-audio.conf
+        content: |
+          # Realtime audio priority limits for professional audio production
+          @audio    - rtprio   95
+          @audio    - memlock  unlimited
+          @audio    - nice    -19
+
+          @pipewire - rtprio   95
+          @pipewire - memlock  unlimited
+          @pipewire - nice    -19
+      - path: /etc/sysctl.d/99-realtime-audio.conf
+        content: |
+          # Optimize system parameters for low-latency audio processing
+          fs.inotify.max_user_watches = 524288
+          vm.swappiness = 10
+      - path: /etc/udev/rules.d/99-realtime-audio.rules
+        content: |
+          # Grant audio group access to high-resolution hardware timers
+          KERNEL=="rtc0", GROUP="audio", MODE="0660"
+          KERNEL=="hpet", GROUP="audio", MODE="0660"
