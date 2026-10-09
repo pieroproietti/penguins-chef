@@ -44,7 +44,7 @@ func TestManjaroSelectsArchDesktopProfiles(t *testing.T) {
 		if d.FamilyID != "archlinux" || d.DistroID != "manjaro" {
 			t.Fatalf("unexpected identity: %+v", d)
 		}
-		for _, path := range []string{"../../recipes/desktop/lightdm.yaml", "../../recipes/costumes/colibri/colibri.yaml"} {
+		for _, path := range []string{"../../recipes/dm/lightdm.yaml", "../../recipes/costumes/colibri/colibri.yaml"} {
 			f, err := os.Open(path)
 			if err != nil {
 				t.Fatal(err)

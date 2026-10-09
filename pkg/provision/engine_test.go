@@ -378,7 +378,7 @@ func TestStrictSchema(t *testing.T) {
 			t.Fatalf("invalid schema accepted: %s", input)
 		}
 	}
-	for _, recipePath := range []string{"../../recipes/desktop/lightdm.yaml", "../../recipes/costumes/colibri/colibri.yaml"} {
+	for _, recipePath := range []string{"../../recipes/dm/lightdm.yaml", "../../recipes/costumes/colibri/colibri.yaml"} {
 		for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
 			f, err := os.Open(recipePath)
 			if err != nil {
@@ -829,7 +829,7 @@ func TestCostumeHostnameInBuild(t *testing.T) {
 	r3 := Recipe{
 		Version:  1,
 		Name:     "xfce4",
-		baseDir:  "/home/user/recipes/desktop",
+		baseDir:  "/home/user/recipes/de",
 		Profiles: map[string]Profile{"fedora": {}},
 	}
 	p3, err := Build(r3, "fedora", "systemd")
@@ -965,7 +965,7 @@ func TestEagleRecipeHasHostnameAndBuilds(t *testing.T) {
 }
 
 func TestMateDesktopRecipeBuilds(t *testing.T) {
-	path := "../../recipes/desktop/mate.yaml"
+	path := "../../recipes/de/mate.yaml"
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("failed to open mate.yaml: %v", err)
@@ -985,21 +985,15 @@ func TestMateDesktopRecipeBuilds(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Build for %s failed: %v", family, err)
 		}
-		var foundDM bool
-		var foundTarget bool
+		var foundPackages bool
 		for _, s := range plan.Steps {
-			if s.ID == "service:lightdm.service" {
-				foundDM = true
-			}
-			if s.ID == "default-target:graphical.target" {
-				foundTarget = true
+			if s.ID == "packages:install" {
+				foundPackages = true
+				break
 			}
 		}
-		if !foundDM {
-			t.Fatalf("step service:lightdm.service missing in plan for family %s", family)
-		}
-		if !foundTarget {
-			t.Fatalf("step default-target:graphical.target missing in plan for family %s", family)
+		if !foundPackages {
+			t.Fatalf("step packages:install missing in plan for family %s", family)
 		}
 	}
 }
@@ -1039,7 +1033,7 @@ func TestSparrowRecipeHasHostnameAndBuilds(t *testing.T) {
 }
 
 func TestLxqtDesktopRecipeBuilds(t *testing.T) {
-	path := "../../recipes/desktop/lxqt.yaml"
+	path := "../../recipes/de/lxqt.yaml"
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("failed to open lxqt.yaml: %v", err)
@@ -1059,21 +1053,56 @@ func TestLxqtDesktopRecipeBuilds(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Build for %s failed: %v", family, err)
 		}
-		var foundDM bool
-		var foundTarget bool
+		var foundPackages bool
 		for _, s := range plan.Steps {
-			if s.ID == "service:sddm.service" {
-				foundDM = true
-			}
-			if s.ID == "default-target:graphical.target" {
-				foundTarget = true
+			if s.ID == "packages:install" {
+				foundPackages = true
+				break
 			}
 		}
-		if !foundDM {
-			t.Fatalf("step service:sddm.service missing in plan for family %s", family)
+		if !foundPackages {
+			t.Fatalf("step packages:install missing in plan for family %s", family)
 		}
-		if !foundTarget {
-			t.Fatalf("step default-target:graphical.target missing in plan for family %s", family)
+	}
+}
+
+func TestDisplayManagerRecipesBuild(t *testing.T) {
+	for _, dm := range []struct {
+		path    string
+		service string
+	}{
+		{"../../recipes/dm/lightdm.yaml", "service:lightdm.service"},
+		{"../../recipes/dm/sddm.yaml", "service:sddm.service"},
+	} {
+		f, err := os.Open(dm.path)
+		if err != nil {
+			t.Fatalf("failed to open %s: %v", dm.path, err)
+		}
+		recipe, err := Load(f)
+		f.Close()
+		if err != nil {
+			t.Fatalf("failed to load %s: %v", dm.path, err)
+		}
+		for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+			plan, err := Build(recipe, family, "systemd")
+			if err != nil {
+				t.Fatalf("Build for %s failed: %v", family, err)
+			}
+			var foundDM, foundTarget bool
+			for _, s := range plan.Steps {
+				if s.ID == dm.service {
+					foundDM = true
+				}
+				if s.ID == "default-target:graphical.target" {
+					foundTarget = true
+				}
+			}
+			if !foundDM {
+				t.Fatalf("step %s missing in plan for %s", dm.service, dm.path)
+			}
+			if !foundTarget {
+				t.Fatalf("step default-target missing in plan for %s", dm.path)
+			}
 		}
 	}
 }
@@ -1114,9 +1143,9 @@ func TestSwallowRecipeHasHostnameAndBuilds(t *testing.T) {
 
 func TestAppRecipesBuild(t *testing.T) {
 	for _, appPath := range []string{
-		"../../recipes/graphic/gimp.yaml",
+		"../../recipes/graphics/gimp.yaml",
 		"../../recipes/office/libreoffice.yaml",
-		"../../recipes/media/vlc.yaml",
+		"../../recipes/multimedia/vlc.yaml",
 	} {
 		f, err := os.Open(appPath)
 		if err != nil {

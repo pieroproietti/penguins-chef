@@ -3,6 +3,8 @@ name: eagle
 hostname: eagle
 
 include:
-  - ../../desktop/gnome.yaml
+  - ../../base/base.yaml
+  - ../../dm/gdm.yaml
+  - ../../de/gnome.yaml
 
 sysroot: sysroot

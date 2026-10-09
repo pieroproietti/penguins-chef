@@ -1,16 +1,12 @@
 version: 1
-name: cinnamon-desktop
-
-include:
-  - ../base/base.yaml
-  - lightdm.yaml
+name: mate-desktop
 
 profiles:
   debian:
     packages:
       - xserver-xorg
-      - cinnamon-desktop-environment
-      - gnome-terminal
+      - mate-desktop-environment
+      - mate-terminal
       - fonts-dejavu-core
       # firefox-esr
       - spice-vdagent
@@ -21,14 +17,20 @@ profiles:
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
-          user-session=cinnamon
+          user-session=mate
 
   archlinux:
     packages:
       - xorg-server
-      - cinnamon
-      - nemo-fileroller
-      - gnome-terminal
+      - mate-session-manager
+      - mate-panel
+      - mate-settings-daemon
+      - mate-control-center
+      - mate-terminal
+      - caja
+      - marco
+      - mate-polkit
+      - mate-themes
       - ttf-dejavu
       - firefox
       - spice-vdagent
@@ -39,14 +41,18 @@ profiles:
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
-          user-session=cinnamon
+          user-session=mate
 
   fedora:
     packages:
       - xorg-x11-server-Xorg
-      - cinnamon
-      - nemo
-      - gnome-terminal
+      - mate-session-manager
+      - mate-panel
+      - mate-settings-daemon
+      - mate-control-center
+      - mate-terminal
+      - caja
+      - marco
       - dejavu-sans-fonts
       - firefox
       - spice-vdagent
@@ -57,14 +63,14 @@ profiles:
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
-          user-session=cinnamon
+          user-session=mate
 
   opensuse:
     packages:
       - xorg-x11-server
-      - patterns-cinnamon-cinnamon
-      - cinnamon
-      - gnome-terminal
+      - patterns-mate-mate
+      - mate-session-manager
+      - mate-terminal
       - pipewire
       - pipewire-pulseaudio
       - wireplumber
@@ -78,4 +84,4 @@ profiles:
         content: |
           [Seat:*]
           greeter-session=lightdm-gtk-greeter
-          user-session=cinnamon
+          user-session=mate

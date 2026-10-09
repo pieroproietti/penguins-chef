@@ -1,10 +1,6 @@
 version: 1
 name: lxqt-desktop
 
-include:
-  - ../base/base.yaml
-  - sddm.yaml
-
 profiles:
   debian:
     packages:

@@ -252,7 +252,9 @@ version: 1
 name: colibri-desktop
 
 include:
-  - ../desktop/xfce4.yaml
+  - ../../base/base.yaml
+  - ../../dm/lightdm.yaml
+  - ../../de/xfce4.yaml
 
 sysroot: colibri/sysroot
 
@@ -297,31 +299,47 @@ recipes/
 │   ├── base.yaml           # Repository, shell, permessi, pacchetti e profili essenziali
 │   └── audio-pipewire.yaml # Stack audio moderno di sistema (PipeWire + WirePlumber)
 │
-├── desktop/                # Ambienti grafici upstream/vanilla (senza branding)
+├── dm/                     # Display Manager (gestori degli accessi e target grafico)
 │   ├── lightdm.yaml        # Sottosistema Display Manager LightDM e target grafico
-│   ├── xfce4.yaml          # XFCE desktop di fabbrica (include lightdm.yaml e agenti grafici)
-│   ├── gnome.yaml          # GNOME vanilla
-│   └── plasma.yaml         # KDE Plasma vanilla
+│   ├── gdm.yaml            # GNOME Display Manager
+│   └── sddm.yaml           # Simple Desktop Display Manager
 │
-├── dev/                    # Ruoli e ambienti di sviluppo
+├── de/                     # Ambienti grafici upstream/vanilla (senza DM e senza branding)
+│   ├── xfce4.yaml          # XFCE desktop
+│   ├── gnome.yaml          # GNOME desktop
+│   ├── plasma.yaml         # KDE Plasma desktop
+│   ├── cinnamon.yaml       # Cinnamon desktop
+│   ├── mate.yaml           # MATE desktop
+│   └── lxqt.yaml           # LXQt desktop
+│
+├── development/            # Ruoli e ambienti di sviluppo
 │   ├── golang.yaml         # Compilatore Go e toolchain essenziale
 │   ├── vscode.yaml         # Editor Visual Studio Code
 │   └── devel.yaml          # Suite completa di sviluppo (include golang + vscode)
 │
-└── costumes/               # Configurazioni complete e personalizzate (branding + sysroot)
+├── graphics/               # Applicazioni grafiche
+│   └── gimp.yaml           # GNU Image Manipulation Program
+│
+├── multimedia/             # Applicazioni multimediali
+│   └── vlc.yaml            # VLC media player
+│
+├── office/                 # Produttività e ufficio
+│   └── libreoffice.yaml    # Suite LibreOffice
+│
+└── costumes/               # Configurazioni complete e personalizzate (base + dm + de + branding + sysroot)
     ├── colibri/
-    │   ├── colibri.yaml    # Include desktop/xfce4.yaml + asset Colibri
+    │   ├── colibri.yaml    # Include base + dm/lightdm.yaml + de/xfce4.yaml + asset Colibri
     │   └── sysroot/        # Wallpaper, icone, impostazioni Xfconf, /etc/skel
     └── quirinux/
-        ├── quirinux.yaml   # Include desktop/xfce4.yaml + pacchetti grafici/audio + sysroot
+        ├── quirinux.yaml   # Include base + dm/lightdm.yaml + de/xfce4.yaml + pacchetti grafici/audio + sysroot
         └── sysroot/
 ```
 
 Questa struttura garantisce che un utente possa installare:
-- Solo un display manager: `chef apply recipes/desktop/lightdm.yaml`
-- Un desktop XFCE standard di distribuzione: `chef apply recipes/desktop/xfce4.yaml`
+- Solo un display manager: `chef apply recipes/dm/lightdm.yaml`
+- Un desktop XFCE standard di distribuzione: `chef apply recipes/de/xfce4.yaml`
 - Il costume rifinito e personalizzato: `chef apply recipes/costumes/colibri/colibri.yaml`
-- Un ambiente di sviluppo additivo su una macchina già configurata: `chef apply recipes/dev/devel.yaml`
+- Un ambiente di sviluppo additivo su una macchina già configurata: `chef apply recipes/development/devel.yaml`
 
 ### 3. Granularità e livello di astrazione: evitare il "meta-package-manager"
 

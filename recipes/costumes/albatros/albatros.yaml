@@ -3,7 +3,9 @@ name: albatros
 hostname: albatros
 
 include:
-  - ../../desktop/plasma.yaml
+  - ../../base/base.yaml
+  - ../../dm/sddm.yaml
+  - ../../de/plasma.yaml
 
 sysroot: sysroot
 

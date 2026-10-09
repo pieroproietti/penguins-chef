@@ -3,6 +3,8 @@ name: sparrow
 hostname: sparrow
 
 include:
-  - ../../desktop/mate.yaml
+  - ../../base/base.yaml
+  - ../../dm/lightdm.yaml
+  - ../../de/mate.yaml
 
 sysroot: sysroot

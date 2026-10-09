@@ -3,7 +3,9 @@ name: colibri
 hostname: colibri
 
 include:
-  - ../../desktop/xfce4.yaml
+  - ../../base/base.yaml
+  - ../../dm/lightdm.yaml
+  - ../../de/xfce4.yaml
 
 sysroot: sysroot
 

@@ -3,6 +3,8 @@ name: swallow
 hostname: swallow
 
 include:
-  - ../../desktop/lxqt.yaml
+  - ../../base/base.yaml
+  - ../../dm/sddm.yaml
+  - ../../de/lxqt.yaml
 
 sysroot: sysroot

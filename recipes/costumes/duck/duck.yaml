@@ -3,6 +3,8 @@ name: duck
 hostname: duck
 
 include:
-  - ../../desktop/cinnamon.yaml
+  - ../../base/base.yaml
+  - ../../dm/lightdm.yaml
+  - ../../de/cinnamon.yaml
 
 sysroot: sysroot
