@@ -1,122 +1,69 @@
-# penguins-chef
+# Penguins Chef 👨‍🍳🐧
 
-**penguins-chef** is a standalone, lightweight tool written in Go to apply explicit system configuration recipes to Linux distributions. Recipes and their assets live alongside the project or wherever the user keeps them; Chef cooks and configures systems directly from declarative recipes.
+> The lightweight, modular culinary companion for `penguins-eggs` to forge custom Linux systems.
 
----
+## 🎯 Project Goals
 
-## 🚀 Features
+`penguins-chef` is built with a precise goal: **to provide respin and derivative creators with a clean, modular, and deterministic starting point**, avoiding the tedious and imperfect "post-installation cleanup" work typical of all-in-one live ISOs aimed at end-users.
 
-- **Get**: Clone or update the chef repository in `~/.chef` (`chef get [url]`).
-- **Apply**: Validate and execute an operation-based recipe (`chef apply <recipe.yaml>`), with a reviewable dry run.
-- **Export**: Transfer native packages (`chef export pkg`) or execution logs and reports (`chef export log`) to remote storage via SSH.
-- **Build**: Integrated packaging tool to compile binaries and produce native distribution packages (`chef tools build`).
-- **Repo**: Configure or remove official `penguins-eggs.net` repositories (`sudo chef tools repo [add|rm]`).
-- **Distro-Aware**: Automatically identifies target distributions (Debian, Ubuntu, Arch, Alpine, Fedora, openSUSE, etc.) and generates assistance prompts if non-Debian package managers are present.
+Instead of starting from a heavy system bloated with unwanted software, `penguins-chef` relies on three core pillars:
+1. **Naked Starting Point:** Begin with essential, command-line-only base ISO images (`naked`).
+2. **Total Modularity:** Using recipes, install only what you need (Display Manager, Desktop Environment, development tools, multimedia packages).
+3. **Tailored Customization (Costumes):** Configure wallpapers, themes, user settings, and system overlays (`sysroot`) in a clean and repeatable way.
 
-The operation-based engine supports explicit profiles for Debian, Arch Linux, Fedora and openSUSE. See [the execution model and examples](docs/atomic-execution.md) for its current scope and limitations.
+*Note:* This tool is designed for developers, maintainers, and power users who want to assemble their operating system "from the kitchen," and is not targeted at end-users looking for a ready-to-use "out of the box" live ISO.
 
 ---
 
-## 📦 Installation
+## 📂 Recipes Structure (`recipes/`)
 
-```bash
-git clone https://github.com/pieroproietti/penguins-chef.git
-cd penguins-chef
-make
-sudo make install
+The directory structure strictly follows **FreeDesktop** specifications for application categories, paired with standard definitions for graphical environments:
+
+```text
+recipes/
+├── base/                   # Base system configuration
+├── de/                     # Desktop Environments (plasma, xfce4, cinnamon, gnome, etc.)
+├── dm/                     # Display Managers (sddm, lightdm, gdm)
+├── costumes/               # Visual themes and custom user profiles (albatros, colibri, etc.)
+├── development/            # Development tools and IDEs
+├── education/              # Educational software
+├── game/                   # Games and entertainment
+├── graphics/               # Graphics and photo editing tools
+├── multimedia/             # Audio and video (e.g., vlc)
+├── network/                # Browsers and network tools
+├── office/                 # Productivity suites
+├── settings/               # Configuration tools
+├── system/                 # System utilities
+└── utility/                # Accessories and daily utilities
 ```
 
 ---
 
-## 👨‍🍳 Command Reference
+## 🚀 Quick Start Guide
 
-### Get Command
-
-The **`get`** command clones or updates the chef repository in `~/.chef`:
-
+### 1. Fetch the recipes
+Before applying any configuration, download or update the recipe set:
 ```bash
-# Clone or pull default repository in ~/.chef
 chef get
-
-# Clone a custom repository or branch
-chef get https://github.com/pieroproietti/penguins-chef --branch main
 ```
 
-**Flags:**
-- `-u, --url <url>`: URL of the chef repository (default: `https://github.com/pieroproietti/penguins-chef`).
-- `-b, --branch <branch>`: Branch of the chef repository.
-
-### Apply Command
-
-`apply` builds an explicit repository → packages → configuration → init plan.
-Use `--dry-run` to inspect the operations before applying them.
-
+### 2. Install a Display Manager and Desktop Environment
+You can compose your graphical interface by first applying the login manager recipe and then your preferred desktop environment (for example on Arch Linux):
 ```bash
-chef apply examples/provision/lightdm.yaml --dry-run --family archlinux --init systemd
+sudo chef apply recipes/dm/sddm.yaml
+sudo chef apply recipes/de/gnome.yaml
 ```
 
-### Export Commands
-
-The **`export`** command suite automates the transfer of generated artifacts and logs to configured remote destinations:
-
-#### 1. Export Native Packages (`chef export pkg`)
-Transfers compiled native packages (`.deb`, `.rpm`, `.pkg.tar.zst`, `.apk`) corresponding to the current distribution family to the remote storage server (`root@192.168.1.2:/eggs/`). It establishes an SSH multiplexed connection for efficient multi-file transfer.
-
+### 3. Apply a Costume (Customization)
+Costumes define visual identity and user configuration files (wallpapers, dotfiles, etc.) via a mirrored `sysroot` structure:
 ```bash
-# Export the built package
-chef export pkg
-
-# Clean old versions on the remote server before exporting
-chef export pkg --clean
+sudo chef apply recipes/costumes/colibri/colibri.yaml
 ```
-
-**Flags:**
-- `--clean`: Removes previous versions of the package matching the distribution pattern on the remote server before uploading the new one.
-
-#### 2. Export Logs and Reports (`chef export log`)
-Collects and uploads the main chef log file (`/var/log/chef/chef.log`) and the latest detailed execution report (`/var/log/chef/chef-report-*.txt`) to the target server in a single SSH session without requiring manual file copying.
-
-```bash
-# Export logs to default remote destination
-chef export log
-
-# Export logs with custom SSH user, IP, and destination directory
-chef export log -u artisan -i 192.168.1.50 -d /home/artisan/logs
-```
-
-**Flags:**
-- `-u, --user <username>`: Remote SSH username (default: `artisan`).
-- `-i, --ip <address>`: Remote IP address or hostname (default: `192.168.1.2`).
-- `-d, --dir <path>`: Destination directory on the remote machine (default: `/home/artisan`).
 
 ---
 
-### Packaging & Auxiliary Tools
-
-- **`chef tools build`**
-  Compiles binaries and generates distribution-specific packages (`.deb` for Debian/Ubuntu, `PKGBUILD`/`.pkg.tar.zst` for Arch Linux, `.rpm` for Fedora/openSUSE, `.apk` for Alpine). Must be run as a regular user (not root).
-  ```bash
-  chef tools build
-  ```
-
-- **`chef tools repo [add|rm]`**
-  Configures or removes the official `penguins-eggs.net` repositories and GPG keys for the host system's package manager (APT, Pacman, DNF, Zypper, APK). Requires root privileges (`sudo`).
-  ```bash
-  # Add official repository and GPG keys
-  sudo chef tools repo add
-
-  # Remove repository configuration and keys
-  sudo chef tools repo rm
-  ```
-
----
-
-## 🙏 Acknowledgements
-
-Special thanks to **[Charlie Martínez](https://github.com/charliemartinez)** [Quirinux](https://quirinux.org) for his invaluable support, extensive testing, ideas, and close collaboration during the development and experimentation of `penguins-chef`.
-
----
-
-## 📜 License
-
-MIT License. Copyright (c) 2026 Piero Proietti.
+## 🛠️ Contributing
+Want to add a new recipe or create a new costume?
+1. Create the folder or YAML file in the correct category following FreeDesktop standards.
+2. If the costume requires configuration files or wallpapers, place them in the relative `sysroot/` subfolder respecting system paths (e.g., `/etc/` or `/usr/share/backgrounds/`).
+3. Test the recipe in the field and submit a pull request!
