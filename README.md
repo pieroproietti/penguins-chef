@@ -47,14 +47,24 @@ Before applying any configuration, download or update the recipe set:
 chef get
 ```
 
-### 2. Install a Display Manager and Desktop Environment
+### 2. Inspect with Dry-Run
+Before applying changes, safely preview the execution plan (no root required):
+```bash
+# Preview on the current host
+chef apply recipes/dm/sddm.yaml --dry-run
+
+# Simulate for another distribution (e.g. Arch Linux)
+chef apply recipes/dm/sddm.yaml --dry-run --family archlinux
+```
+
+### 3. Install a Display Manager and Desktop Environment
 You can compose your graphical interface by first applying the login manager recipe and then your preferred desktop environment (for example on Arch Linux):
 ```bash
 sudo chef apply recipes/dm/sddm.yaml
 sudo chef apply recipes/de/gnome.yaml
 ```
 
-### 3. Apply a Costume (Customization)
+### 4. Apply a Costume (Customization)
 Costumes define visual identity and user configuration files (wallpapers, dotfiles, etc.) via a mirrored `sysroot` structure:
 ```bash
 sudo chef apply recipes/costumes/colibri/colibri.yaml

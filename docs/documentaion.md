@@ -16,7 +16,7 @@ The engine executes autonomous and complete recipes through a rigorous, verifiab
 5. **Atomic Transaction:** Inspect installed packages, install missing ones in a single transaction, and verify the outcome for each package.
 6. **Deploy Configuration Files:** Compare, write, and verify configuration files (UTF-8 YAML, default permissions `0644`). Symbolic link destinations are strictly rejected.
 7. **Manage Hostname:** Check, set, and verify the system hostname (for costumes or explicit declarations), atomically updating `/etc/hosts` for local loopback resolution.
-8. **Manage Services:** Check, enable, and verify services through the init backend (services are enabled, not immediately started).
+8. **Manage Services:** Check, enable, and verify services through the init backend on systemd hosts (services are enabled, not immediately started). On SysVinit hosts (Devuan), service management is delegated natively to package installation scripts.
 
 *Note on Atomicity:* "Atomic" here means a unit with a verifiable result rather than a full system rollback transaction. Files are replaced via temporary file renaming in the same directory. Every execution re-reads the real state of packages, configurations, and services.
 
@@ -90,28 +90,53 @@ profiles:
 
 `penguins-chef` decouples package managers and init systems across major Linux distributions:
 
-* **Arch Linux / Manjaro:** Uses `pacman`. Prepares by running `pacman -Syu --noconfirm` (system update is mandatory to prevent partial upgrades).
-* **Debian / Ubuntu / Devuan:** Uses `apt`. Prepares by running `apt-get update --error-on=any`.
-* **Fedora:** Uses `DNF` (including DNF5). Refreshes via `dnf --refresh makecache`, checks availability with `dnf repoquery --available`, and installs via `dnf install -y` without performing a full system upgrade.
-* **openSUSE Tumbleweed:** Uses `zypper --non-interactive refresh` with exact XML repository search. Uses RPM for installed package verification.
+* **Arch Linux / Manjaro:** Uses `pacman`. Prepares by running `pacman -Syu --noconfirm` (system update is mandatory to prevent partial upgrades). Init: `systemd`.
+* **Debian / Ubuntu:** Uses `apt`. Prepares by running `apt-get update --error-on=any`. Init: `systemd`.
+* **Devuan:** Uses `apt`. Prepares by running `apt-get update --error-on=any`. Init: `sysvinit`.
+* **Fedora:** Uses `DNF` (including DNF5). Refreshes via `dnf --refresh makecache`, checks availability with `dnf repoquery --available`, and installs via `dnf install -y` without performing a full system upgrade. Init: `systemd`.
+* **openSUSE Tumbleweed:** Uses `zypper --non-interactive refresh` with exact XML repository search. Uses RPM for installed package verification. Init: `systemd`.
+
+### ⚡ Init System Handling
+The init system is detected automatically from runtime state without requiring manual parameters:
+* **systemd (Default):** Used on Arch Linux, Fedora, openSUSE, Debian, and Ubuntu. Services are managed via `systemctl` (`check/enable/verify`) and default targets via `systemctl set-default`.
+* **sysvinit (Devuan):** Used on Devuan. APT natively handles package service configuration via `/etc/init.d`. Systemd-specific packages (`systemd-timesyncd`, `systemd-resolved`) and `systemctl` operations are automatically excluded to ensure zero friction.
 
 ---
 
 ## 🛠️ Usage & Dry-Run Verification
 
-Before making any changes to the system, always inspect the fully resolved execution plan using `--dry-run`:
+Before making any changes to the system, inspect the fully resolved execution plan using `--dry-run`:
 
+### Dry-Run on Current Host
 ```bash
-# Simulate LightDM provisioning across different families (no init parameter needed)
-go run . apply recipes/dm/lightdm.yaml --dry-run --family debian
-go run . apply recipes/dm/lightdm.yaml --dry-run --family archlinux
+# Preview LightDM provisioning on the current host
+chef apply recipes/dm/lightdm.yaml --dry-run
 
-# Simulate Colibri desktop provisioning on Arch Linux
-go run . apply recipes/costumes/colibri/colibri.yaml --dry-run --family archlinux
+# Preview Colibri desktop provisioning on the current host
+chef apply recipes/costumes/colibri/colibri.yaml --dry-run
 ```
 
+### Cross-Family Dry-Run Simulation
+Simulate how recipes resolve and apply across other distributions without requiring forced init parameters or matching environments:
+```bash
+# Simulate for Arch Linux (automatically uses Arch's native systemd)
+chef apply recipes/dm/lightdm.yaml --dry-run --family archlinux
+
+# Simulate for Fedora (automatically uses Fedora's native systemd)
+chef apply recipes/dm/lightdm.yaml --dry-run --family fedora
+
+# Simulate for openSUSE (automatically uses openSUSE's native systemd)
+chef apply recipes/dm/lightdm.yaml --dry-run --family opensuse
+
+# Simulate for Devuan (automatically uses Devuan's native sysvinit)
+chef apply recipes/dm/lightdm.yaml --dry-run --family devuan
+```
+
+> [!NOTE]
+> The `--init` parameter is not required. The engine automatically detects `systemd` or `sysvinit` on the real host, and selects the native init system for target distributions during cross-family simulations.
+
 ### Applying a Recipe on a Real Host
-On a target machine, the package family and native init system (systemd, sysvinit, openrc) are automatically detected from the host:
+On a target machine, the package family and native init system (`systemd` or `sysvinit`) are automatically detected directly from the host:
 
 ```bash
 # Apply a specific display manager
