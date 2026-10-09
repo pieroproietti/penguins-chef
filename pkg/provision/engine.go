@@ -204,6 +204,9 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 	}
 	if s.DefaultTarget != "" {
 		if _, err := initFor(p.Init); err != nil {
+			if p.Family == "debian" {
+				return nil
+			}
 			return err
 		}
 		check := []string{"systemctl", "get-default"}
@@ -230,6 +233,9 @@ func (p Plan) executeStep(ctx context.Context, r Runner, s Step) error {
 	if s.Service != "" {
 		backend, err := initFor(p.Init)
 		if err != nil {
+			if p.Family == "debian" {
+				return nil
+			}
 			return err
 		}
 		check := backend.check(s.Service)
@@ -369,7 +375,33 @@ func reconcileHostname(ctx context.Context, r Runner, hostname string) error {
 	check := []string{"hostnamectl", "hostname"}
 	out, err := r.Output(ctx, check)
 	if err != nil {
-		return err
+		fallbackCheck := []string{"hostname"}
+		out, err = r.Output(ctx, fallbackCheck)
+		if err != nil {
+			return err
+		}
+		current := strings.TrimSpace(out)
+		if current != hostname {
+			if err := r.Run(ctx, []string{"hostname", hostname}); err != nil {
+				return err
+			}
+			out, err = r.Output(ctx, fallbackCheck)
+			if err != nil {
+				return err
+			}
+			if strings.TrimSpace(out) != hostname {
+				return fmt.Errorf("hostname is not %s", hostname)
+			}
+		}
+		if _, isHost := r.(HostRunner); isHost {
+			if err := writeAtomicFile("/etc/hostname", hostname+"\n", 0644); err != nil {
+				return err
+			}
+			if err := reconcileHostsFile(defaultHostsPath, current, hostname); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 	current := strings.TrimSpace(out)
 	if current != hostname {

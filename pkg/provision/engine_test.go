@@ -42,7 +42,7 @@ func (r *fakeRunner) Output(_ context.Context, args []string) (string, error) {
 	}
 	last := args[len(args)-1]
 	switch {
-	case args[0] == "hostnamectl" && args[1] == "hostname":
+	case (args[0] == "hostnamectl" && args[1] == "hostname") || (args[0] == "hostname" && len(args) == 1):
 		return r.hostname + "\n", nil
 	case args[0] == "zypper":
 		if last == r.unavailable {
@@ -90,9 +90,9 @@ func (r *fakeRunner) Run(_ context.Context, args []string) error {
 	if r.failRun != "" && strings.Contains(event, r.failRun) {
 		return errors.New("transaction failed")
 	}
-	if args[0] == "hostnamectl" && args[1] == "set-hostname" {
+	if (args[0] == "hostnamectl" && args[1] == "set-hostname") || (args[0] == "hostname" && len(args) == 2) {
 		if !r.brokenHostname {
-			r.hostname = args[2]
+			r.hostname = args[len(args)-1]
 		}
 		return nil
 	}
@@ -349,7 +349,7 @@ func TestBuildRejectsInvalidProfiles(t *testing.T) {
 		name, family, init string
 		profile            Profile
 	}{
-		{"init", "debian", "sysv", Profile{Services: []string{"lightdm"}}},
+		{"init", "fedora", "sysv", Profile{Services: []string{"lightdm"}}},
 		{"backend", "alpine", "systemd", Profile{}},
 		{"argument", "debian", "systemd", Profile{Packages: []string{"--purge"}}},
 		{"relative", "debian", "systemd", Profile{Files: []File{{Path: "etc/config"}}}},
@@ -363,6 +363,119 @@ func TestBuildRejectsInvalidProfiles(t *testing.T) {
 			_, err := Build(Recipe{Name: "test", Profiles: map[string]Profile{tc.family: tc.profile}}, tc.family, tc.init)
 			if err == nil {
 				t.Fatal("invalid profile accepted")
+			}
+		})
+	}
+}
+
+func TestDebianAPTTrustsPackageServiceManagementOnNonSystemdInit(t *testing.T) {
+	filePath := filepath.Join(t.TempDir(), "etc", "lightdm.conf")
+	recipe := Recipe{
+		Version: 1,
+		Name:    "test-decouple",
+		Profiles: map[string]Profile{
+			"debian": {
+				Packages:      []string{"lightdm", "lightdm-gtk-greeter"},
+				Files:         []File{{Path: filePath, Content: "[Seat:*]\n"}},
+				Services:      []string{"lightdm.service"},
+				DefaultTarget: "graphical.target",
+			},
+		},
+	}
+
+	for _, initName := range []string{"sysv", "sysvinit", "openrc", "unknown", "none"} {
+		t.Run("non-systemd-"+initName, func(t *testing.T) {
+			plan, err := Build(recipe, "debian", initName)
+			if err != nil {
+				t.Fatalf("Build failed for debian with init %s: %v", initName, err)
+			}
+			// Verify that no service or default-target steps were added (delegated cleanly to APT)
+			for _, step := range plan.Steps {
+				if step.Service != "" {
+					t.Fatalf("unexpected service step %s in plan for init %s", step.ID, initName)
+				}
+				if step.DefaultTarget != "" {
+					t.Fatalf("unexpected default-target step %s in plan for init %s", step.ID, initName)
+				}
+			}
+			// Verify package installation step is present
+			hasPkgInstall := false
+			for _, step := range plan.Steps {
+				if step.ID == "packages:install" {
+					hasPkgInstall = true
+					expected := []string{"lightdm", "lightdm-gtk-greeter"}
+					if !reflect.DeepEqual(step.Packages, expected) {
+						t.Fatalf("packages = %v, want %v", step.Packages, expected)
+					}
+				}
+			}
+			if !hasPkgInstall {
+				t.Fatal("packages:install step missing from plan")
+			}
+			// Verify execution does not attempt to invoke systemctl or fail
+			runner := &fakeRunner{family: "debian", installed: map[string]bool{}}
+			var out strings.Builder
+			if err := plan.Execute(context.Background(), runner, &out); err != nil {
+				t.Fatalf("Execute failed for debian with init %s: %v", initName, err)
+			}
+			for _, ev := range runner.events {
+				if strings.Contains(ev, "systemctl") {
+					t.Fatalf("systemctl called unexpectedly for init %s: %s", initName, ev)
+				}
+			}
+		})
+	}
+
+	// Verify that with systemd, explicit service and target steps ARE included and managed
+	t.Run("systemd", func(t *testing.T) {
+		plan, err := Build(recipe, "debian", "systemd")
+		if err != nil {
+			t.Fatalf("Build failed for debian with systemd: %v", err)
+		}
+		hasService := false
+		hasTarget := false
+		for _, step := range plan.Steps {
+			if step.ID == "service:lightdm.service" {
+				hasService = true
+			}
+			if step.ID == "default-target:graphical.target" {
+				hasTarget = true
+			}
+		}
+		if !hasService || !hasTarget {
+			t.Fatalf("expected service and default-target steps with systemd, got steps: %v", plan.Steps)
+		}
+		runner := &fakeRunner{family: "debian", installed: map[string]bool{}}
+		var out strings.Builder
+		if err := plan.Execute(context.Background(), runner, &out); err != nil {
+			t.Fatalf("Execute failed for debian with systemd: %v", err)
+		}
+		systemctlCalled := false
+		for _, ev := range runner.events {
+			if strings.Contains(ev, "systemctl") {
+				systemctlCalled = true
+				break
+			}
+		}
+		if !systemctlCalled {
+			t.Fatal("expected systemctl to be called for systemd init")
+		}
+	})
+
+	// Verify that non-APT distributions still reject unsupported init
+	for _, fam := range []string{"fedora", "archlinux", "opensuse"} {
+		t.Run("non-apt-"+fam, func(t *testing.T) {
+			famRecipe := Recipe{
+				Version: 1,
+				Name:    "test",
+				Profiles: map[string]Profile{
+					fam: {
+						Services: []string{"lightdm.service"},
+					},
+				},
+			}
+			if _, err := Build(famRecipe, fam, "sysv"); err == nil {
+				t.Fatalf("expected Build to fail for %s with sysv", fam)
 			}
 		})
 	}

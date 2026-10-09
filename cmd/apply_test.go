@@ -48,3 +48,32 @@ func TestApplyRejectsTargetOverrideDuringExecution(t *testing.T) {
 		t.Fatalf("override accepted: %v", err)
 	}
 }
+
+func TestApplyDryRunDebianAlternativeInit(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	for _, initName := range []string{"sysv", "sysvinit", "openrc", "unknown"} {
+		t.Run(initName, func(t *testing.T) {
+			dir := t.TempDir()
+			target := filepath.Join(dir, "never-created")
+			recipe := filepath.Join(dir, "recipe.yaml")
+			text := "version: 1\nname: test\nprofiles:\n  debian:\n    packages: [lightdm]\n    files:\n      - path: " + target + "\n        content: test\n    services: [lightdm.service]\n"
+			if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
+				t.Fatal(err)
+			}
+			cmd := applyCmd()
+			var out bytes.Buffer
+			cmd.SetOut(&out)
+			cmd.SetArgs([]string{recipe, "--dry-run", "--family", "debian", "--init", initName})
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("apply failed for debian with init %s: %v", initName, err)
+			}
+			if strings.Contains(out.String(), "[init]") {
+				t.Fatalf("unexpected [init] phase in plan for debian with init %s: %s", initName, out.String())
+			}
+			if !strings.Contains(out.String(), "[packages]") || !strings.Contains(out.String(), "packages:install") {
+				t.Fatalf("missing packages:install in plan for debian with init %s: %s", initName, out.String())
+			}
+		})
+	}
+}
+

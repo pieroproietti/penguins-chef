@@ -256,9 +256,12 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 	if hostname == "" && isCostume(recipe) {
 		hostname = recipe.Name
 	}
-	if len(profile.Services) > 0 || profile.DefaultTarget != "" || hostname != "" {
-		if _, err := initFor(init); err != nil {
-			return plan, err
+	_, initErr := initFor(init)
+	if family != "debian" {
+		if len(profile.Services) > 0 || profile.DefaultTarget != "" || hostname != "" {
+			if initErr != nil {
+				return plan, initErr
+			}
 		}
 	}
 	if profile.DefaultTarget != "" && (!identifier.MatchString(profile.DefaultTarget) || !strings.HasSuffix(profile.DefaultTarget, ".target")) {
@@ -318,11 +321,13 @@ func Build(recipe Recipe, family, init string) (Plan, error) {
 		}
 		plan.Steps = append(plan.Steps, Step{ID: "hostname:" + hostname, Phase: "configuration", Hostname: hostname})
 	}
-	for _, service := range profile.Services {
-		plan.Steps = append(plan.Steps, Step{ID: "service:" + service, Phase: "init", Service: service})
-	}
-	if profile.DefaultTarget != "" {
-		plan.Steps = append(plan.Steps, Step{ID: "default-target:" + profile.DefaultTarget, Phase: "init", DefaultTarget: profile.DefaultTarget})
+	if initErr == nil {
+		for _, service := range profile.Services {
+			plan.Steps = append(plan.Steps, Step{ID: "service:" + service, Phase: "init", Service: service})
+		}
+		if profile.DefaultTarget != "" {
+			plan.Steps = append(plan.Steps, Step{ID: "default-target:" + profile.DefaultTarget, Phase: "init", DefaultTarget: profile.DefaultTarget})
+		}
 	}
 	if recipe.Sysroot != "" {
 		source := recipe.Sysroot

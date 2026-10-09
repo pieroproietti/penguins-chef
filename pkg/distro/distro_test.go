@@ -64,3 +64,12 @@ func TestManjaroSelectsArchDesktopProfiles(t *testing.T) {
 		}
 	}
 }
+
+func TestDevuanFamilyDetection(t *testing.T) {
+	for _, like := range []string{"", "debian"} {
+		d := distroFromRelease(map[string]string{"ID": "devuan", "ID_LIKE": like, "VERSION_CODENAME": "daedalus"})
+		if d.FamilyID != "debian" || d.DistroLike != "Debian" {
+			t.Fatalf("unexpected devuan identity with ID_LIKE=%q: %+v", like, d)
+		}
+	}
+}

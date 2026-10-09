@@ -81,7 +81,7 @@ func distroFromRelease(osInfo map[string]string) *Distro {
 
 	for _, c := range candidates {
 		switch c {
-		case "debian", "ubuntu":
+		case "debian", "ubuntu", "devuan":
 			d.FamilyID = "debian"
 			d.DistroLike = "Debian"
 			return d
