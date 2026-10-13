@@ -26,6 +26,9 @@ func isDeb822() bool {
 	if _, err := os.Stat("/etc/apt/sources.list.d/debian.sources"); err == nil {
 		return true
 	}
+	if _, err := os.Stat("/etc/apt/sources.list.d/openkylin.sources"); err == nil {
+		return true
+	}
 	return false
 }
 

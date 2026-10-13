@@ -126,6 +126,29 @@ func TestApplyDryRunDevuanDefaultsToSysvinit(t *testing.T) {
 	}
 }
 
+func TestApplyDryRunOpenKylinDefaultsToSystemd(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	dir := t.TempDir()
+	recipe := filepath.Join(dir, "recipe.yaml")
+	text := "version: 1\nname: test\nprofiles:\n  debian:\n    packages: [lightdm]\n    services: [lightdm.service]\n"
+	if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
+		t.Fatal(err)
+	}
+	cmd := applyCmd()
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetArgs([]string{recipe, "--dry-run", "--family", "openkylin"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("dry-run failed for openkylin: %v", err)
+	}
+	if !strings.Contains(out.String(), "packages: debian, init: systemd") {
+		t.Fatalf("expected debian with systemd for openkylin dry-run, got: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "[init]") {
+		t.Fatalf("expected [init] phase for openkylin: %s", out.String())
+	}
+}
+
 func TestApplyWithoutArgsNonInteractive(t *testing.T) {
 	origIsTerm := isTerminalFn
 	defer func() { isTerminalFn = origIsTerm }()

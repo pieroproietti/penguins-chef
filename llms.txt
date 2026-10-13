@@ -41,7 +41,7 @@ All commands use the **`chef`** binary:
   Resolves the complete execution plan and prints every step (repositories, package availability, package transactions, configuration files, hostname, services, sysroot) without modifying the system and without requiring root.
 - **Cross-Family Simulation:**
   ```bash
-  chef apply <recipe.yaml> --dry-run --family <archlinux|debian|devuan|fedora|opensuse>
+  chef apply <recipe.yaml> --dry-run --family <archlinux|debian|devuan|fedora|openkylin|opensuse>
   ```
   Simulates recipe resolution and packages for another distribution family from any host.
 - **Sysroot Override:**

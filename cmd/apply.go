@@ -64,14 +64,14 @@ func applyCmd() *cobra.Command {
 			targetFamily := family
 			if targetFamily == "" {
 				targetFamily = distro.NewDistro().FamilyID
-			} else if targetFamily == "devuan" {
+			} else if targetFamily == "devuan" || targetFamily == "openkylin" {
 				targetFamily = "debian"
 			}
 			targetInit := initSystem
 			if targetInit == "" {
 				if family == "devuan" {
 					targetInit = "sysvinit"
-				} else if dryRun && (family == "archlinux" || family == "fedora" || family == "opensuse") {
+				} else if dryRun && (family == "archlinux" || family == "fedora" || family == "opensuse" || family == "openkylin") {
 					targetInit = "systemd"
 				} else {
 					targetInit = detectInit()
