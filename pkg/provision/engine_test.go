@@ -1305,6 +1305,74 @@ func TestLxqtDesktopRecipeBuilds(t *testing.T) {
 	}
 }
 
+func TestUkuiDesktopRecipeBuilds(t *testing.T) {
+	path := "../../recipes/de/ukui.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open ukui.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load ukui.yaml: %v", err)
+	}
+	if recipe.Name != "ukui-desktop" {
+		t.Fatalf("recipe.Name = %q, want %q", recipe.Name, "ukui-desktop")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var foundPackages bool
+		for _, s := range plan.Steps {
+			if s.ID == "packages:install" {
+				foundPackages = true
+				break
+			}
+		}
+		if !foundPackages {
+			t.Fatalf("step packages:install missing in plan for family %s", family)
+		}
+	}
+}
+
+func TestDdeDesktopRecipeBuilds(t *testing.T) {
+	path := "../../recipes/de/dde.yaml"
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatalf("failed to open dde.yaml: %v", err)
+	}
+	defer f.Close()
+
+	recipe, err := Load(f)
+	if err != nil {
+		t.Fatalf("failed to load dde.yaml: %v", err)
+	}
+	if recipe.Name != "dde-desktop" {
+		t.Fatalf("recipe.Name = %q, want %q", recipe.Name, "dde-desktop")
+	}
+
+	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
+		plan, err := Build(recipe, family, "systemd")
+		if err != nil {
+			t.Fatalf("Build for %s failed: %v", family, err)
+		}
+		var foundPackages bool
+		for _, s := range plan.Steps {
+			if s.ID == "packages:install" {
+				foundPackages = true
+				break
+			}
+		}
+		if !foundPackages {
+			t.Fatalf("step packages:install missing in plan for family %s", family)
+		}
+	}
+}
+
 func TestDisplayManagerRecipesBuild(t *testing.T) {
 	for _, dm := range []struct {
 		path    string

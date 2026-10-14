@@ -1,0 +1,94 @@
+version: 1
+name: ukui-desktop
+description: UKUI desktop environment with modern and user-friendly experience
+
+profiles:
+  debian:
+    packages:
+      - xserver-xorg
+      - ukui-session-manager
+      - ukui-panel
+      - ukui-control-center
+      - ukui-settings-daemon
+      - peony
+      - ukui-menu
+      - ukui-themes
+      - mate-terminal
+      - fonts-dejavu-core
+      # firefox-esr
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=ukui
+
+  archlinux:
+    packages:
+      - xorg-server
+      - ukui-session-manager
+      - ukui-panel
+      - ukui-control-center
+      - ukui-settings-daemon
+      - peony
+      - ukui-menu
+      - ukui-themes
+      - mate-terminal
+      - ttf-dejavu
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=ukui
+
+  fedora:
+    packages:
+      - xorg-x11-server-Xorg
+      - ukui-session-manager
+      - ukui-panel
+      - ukui-control-center
+      - ukui-settings-daemon
+      - peony
+      - mate-terminal
+      - dejavu-sans-fonts
+      - firefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=ukui
+
+  opensuse:
+    packages:
+      - xorg-x11-server
+      - ukui-session-manager
+      - ukui-panel
+      - ukui-control-center
+      - peony
+      - mate-terminal
+      - pipewire
+      - pipewire-pulseaudio
+      - wireplumber
+      - dejavu-fonts
+      - MozillaFirefox
+      - spice-vdagent
+      - xdg-user-dirs
+      - xdg-user-dirs-gtk
+    files:
+      - path: /etc/lightdm/lightdm.conf.d/50-chef.conf
+        content: |
+          [Seat:*]
+          greeter-session=lightdm-gtk-greeter
+          user-session=ukui
