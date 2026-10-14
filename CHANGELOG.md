@@ -1,5 +1,45 @@
 # Changelog
 
+## Release Notes: penguins-chef v26.10.14 - 2026-10-14
+This release introduces full support for OpenKylin Linux, implements an interactive dual-panel TUI interface for `chef apply`, adds robust non-systemd and Devuan support with automatic init detection, adds AI assistant context (`llms.txt`), and reorganizes recipes into modular `dm` and `de` structures.
+
+### 🐧 OpenKylin Distribution Support
+* **Distribution Identification**: Added OpenKylin (`ID=openkylin`, codename `huanghe`) detection in `pkg/distro`, properly mapped to the Debian family.
+* **Modern DEB822 Sources**: Added recognition for OpenKylin DEB822 repository configuration (`/etc/apt/sources.list.d/openkylin.sources`).
+* **Cross-Family Simulation**: Enabled `--family openkylin` support in `chef apply --dry-run`, automatically defaulting init to `systemd`.
+* **Packaging & Scripting**: Updated build helper script `m` to support installing `.deb` packages on OpenKylin.
+
+### 🖥️ Dual-Panel TUI for `chef apply`
+* **Interactive Terminal Interface**: Introduced a two-panel TUI (powered by Bubble Tea) when running `chef apply` interactively without arguments.
+* **Browsing & Inspection**: Left panel provides hierarchical category navigation across costumes and recipes, while the right panel shows detailed recipe specifications, profiles, packages, and services.
+* **Streamlined Provisioning**: Visual confirmation and selection before cooking/applying recipes directly from the terminal console.
+
+### ⚙️ Non-Systemd & Devuan Compatibility
+* **Decoupled Service Management**: Service handling for APT distributions is now decoupled from strict systemd requirements, enabling native SysVinit support.
+* **Devuan Distribution Support**: Added full support for Devuan GNU+Linux, automatically detecting runtime init and defaulting to `sysvinit`.
+* **Conditional Package Filtering**: Systemd-specific packages (such as `systemd-timesyncd` or `dbus-user-session`) are dynamically skipped on non-systemd systems.
+* **Fluid Cross-Family Dry-Run**: Seamless `--dry-run` simulation across distinct distribution families (`archlinux`, `debian`, `devuan`, `fedora`, `openkylin`, `opensuse`) and init systems (`systemd`, `sysvinit`) without requiring manual `--init` flags.
+
+### 🍳 Recipe Architecture & Multimedia
+* **DM and DE Restructuring**: Organized desktop recipes into clean modular categories: `dm/` (display managers: GDM, LightDM, SDDM) and `de/` (desktop environments: GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt).
+* **Music Pro Recipe**: Added dedicated `music-pro` audio/multimedia recipe with comprehensive packaging definitions.
+* **Directory Retention**: Added `.keepit` files to ensure empty recipe skeleton directories are tracked reliably in git.
+
+### 🤖 AI Agent Documentation & Context
+* **LLM Context (`llms.txt`)**: Added `llms.txt` and symlink `llm.txt` providing complete CLI commands, recipe formats, and architecture guidelines for AI coding assistants.
+* **Documentation Refresh**: Updated documentation with automatic init detection details and cross-family simulation workflows.
+
+## Release Notes: penguins-chef v26.10.7 - 2026-10-07
+This release marks the official transition and rebranding from penguins-tailor to penguins-chef, introducing the `chef` CLI command suite and reintroducing `chef get` for recipe repository management.
+
+### 🐧 Project Rebrand to penguins-chef
+* **New CLI Binary**: Rebranded tool to `chef` (`penguins-chef`), with commands `apply`, `get`, `tools`, and `version`.
+* **Workspace Directory**: Standardized recipe directory on `~/.chef`.
+* **Recipe System**: Introduced declarative YAML recipes and costumes for desktop environments, display managers, development environments, and office applications.
+
+### 📥 Chef Get Command
+* **Repository Synchronization**: Added `chef get` command to clone or update recipes and costumes from remote Git repositories directly into `~/.chef`.
+
 ## Release Notes: penguins-tailor v26.9.4 - 2026-09-04
 This release adds costume-provided branding installation, makes technical logs and wear reports distribution-specific, and ensures the installed branding tree remains accessible with consistent root permissions.
 
