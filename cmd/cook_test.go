@@ -6,9 +6,39 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/pieroproietti/penguins-chef/pkg/tui"
 )
 
-func TestApplyDryRunDoesNotExecuteOrWrite(t *testing.T) {
+func TestCookCmdFlags(t *testing.T) {
+	cmd := cookCmd()
+
+	pullFlag := cmd.Flags().Lookup("pull")
+	if pullFlag == nil {
+		t.Fatal("expected --pull flag to exist")
+	}
+	if pullFlag.Shorthand != "p" {
+		t.Errorf("expected shorthand 'p' for --pull, got %q", pullFlag.Shorthand)
+	}
+
+	urlFlag := cmd.Flags().Lookup("url")
+	if urlFlag == nil {
+		t.Fatal("expected --url flag to exist")
+	}
+	if urlFlag.Shorthand != "u" {
+		t.Errorf("expected shorthand 'u' for --url, got %q", urlFlag.Shorthand)
+	}
+
+	branchFlag := cmd.Flags().Lookup("branch")
+	if branchFlag == nil {
+		t.Fatal("expected --branch flag to exist")
+	}
+	if branchFlag.Shorthand != "b" {
+		t.Errorf("expected shorthand 'b' for --branch, got %q", branchFlag.Shorthand)
+	}
+}
+
+func TestCookDryRunDoesNotExecuteOrWrite(t *testing.T) {
 	// No executables are available: preview must not even query the host.
 	t.Setenv("PATH", t.TempDir())
 	for _, family := range []string{"debian", "archlinux", "fedora", "opensuse"} {
@@ -24,7 +54,7 @@ func TestApplyDryRunDoesNotExecuteOrWrite(t *testing.T) {
 			if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
 				t.Fatal(err)
 			}
-			cmd := applyCmd()
+			cmd := cookCmd()
 			var out bytes.Buffer
 			cmd.SetOut(&out)
 			cmd.SetArgs([]string{recipe, "--dry-run", "--family", family, "--sysroot", sysroot})
@@ -41,15 +71,15 @@ func TestApplyDryRunDoesNotExecuteOrWrite(t *testing.T) {
 	}
 }
 
-func TestApplyRejectsTargetOverrideDuringExecution(t *testing.T) {
-	cmd := applyCmd()
+func TestCookRejectsTargetOverrideDuringExecution(t *testing.T) {
+	cmd := cookCmd()
 	cmd.SetArgs([]string{"nonexistent.yaml", "--family", "archlinux"})
 	if err := cmd.Execute(); err == nil || !strings.Contains(err.Error(), "only allowed with --dry-run") {
 		t.Fatalf("override accepted: %v", err)
 	}
 }
 
-func TestApplyDryRunDebianAlternativeInit(t *testing.T) {
+func TestCookDryRunDebianAlternativeInit(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	for _, initName := range []string{"sysv", "sysvinit", "openrc", "unknown"} {
 		t.Run(initName, func(t *testing.T) {
@@ -60,12 +90,12 @@ func TestApplyDryRunDebianAlternativeInit(t *testing.T) {
 			if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
 				t.Fatal(err)
 			}
-			cmd := applyCmd()
+			cmd := cookCmd()
 			var out bytes.Buffer
 			cmd.SetOut(&out)
 			cmd.SetArgs([]string{recipe, "--dry-run", "--family", "debian", "--init", initName})
 			if err := cmd.Execute(); err != nil {
-				t.Fatalf("apply failed for debian with init %s: %v", initName, err)
+				t.Fatalf("cook failed for debian with init %s: %v", initName, err)
 			}
 			if strings.Contains(out.String(), "[init]") {
 				t.Fatalf("unexpected [init] phase in plan for debian with init %s: %s", initName, out.String())
@@ -77,7 +107,7 @@ func TestApplyDryRunDebianAlternativeInit(t *testing.T) {
 	}
 }
 
-func TestApplyDryRunCrossFamilyWithoutInit(t *testing.T) {
+func TestCookDryRunCrossFamilyWithoutInit(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	for _, family := range []string{"archlinux", "fedora", "opensuse"} {
 		t.Run(family, func(t *testing.T) {
@@ -87,7 +117,7 @@ func TestApplyDryRunCrossFamilyWithoutInit(t *testing.T) {
 			if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
 				t.Fatal(err)
 			}
-			cmd := applyCmd()
+			cmd := cookCmd()
 			var out bytes.Buffer
 			cmd.SetOut(&out)
 			// Notice: absolutely no --init parameter passed
@@ -102,7 +132,7 @@ func TestApplyDryRunCrossFamilyWithoutInit(t *testing.T) {
 	}
 }
 
-func TestApplyDryRunDevuanDefaultsToSysvinit(t *testing.T) {
+func TestCookDryRunDevuanDefaultsToSysvinit(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	dir := t.TempDir()
 	recipe := filepath.Join(dir, "recipe.yaml")
@@ -110,7 +140,7 @@ func TestApplyDryRunDevuanDefaultsToSysvinit(t *testing.T) {
 	if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
 		t.Fatal(err)
 	}
-	cmd := applyCmd()
+	cmd := cookCmd()
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	// Testing --family devuan without any --init parameter
@@ -126,7 +156,7 @@ func TestApplyDryRunDevuanDefaultsToSysvinit(t *testing.T) {
 	}
 }
 
-func TestApplyDryRunOpenKylinDefaultsToSystemd(t *testing.T) {
+func TestCookDryRunOpenKylinDefaultsToSystemd(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	dir := t.TempDir()
 	recipe := filepath.Join(dir, "recipe.yaml")
@@ -134,7 +164,7 @@ func TestApplyDryRunOpenKylinDefaultsToSystemd(t *testing.T) {
 	if err := os.WriteFile(recipe, []byte(text), 0644); err != nil {
 		t.Fatal(err)
 	}
-	cmd := applyCmd()
+	cmd := cookCmd()
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetArgs([]string{recipe, "--dry-run", "--family", "openkylin"})
@@ -149,12 +179,12 @@ func TestApplyDryRunOpenKylinDefaultsToSystemd(t *testing.T) {
 	}
 }
 
-func TestApplyWithoutArgsNonInteractive(t *testing.T) {
+func TestCookWithoutArgsNonInteractive(t *testing.T) {
 	origIsTerm := isTerminalFn
 	defer func() { isTerminalFn = origIsTerm }()
 	isTerminalFn = func(f *os.File) bool { return false }
 
-	cmd := applyCmd()
+	cmd := cookCmd()
 	cmd.SetArgs([]string{})
 	err := cmd.Execute()
 	if err == nil || !strings.Contains(err.Error(), "recipe argument required in non-interactive mode") {
@@ -162,33 +192,40 @@ func TestApplyWithoutArgsNonInteractive(t *testing.T) {
 	}
 }
 
-func TestApplyWithoutArgsInteractiveCancelled(t *testing.T) {
+func TestCookWithoutArgsInteractiveCancelled(t *testing.T) {
 	origIsTerm := isTerminalFn
 	origPicker := runRecipePickerFn
+	origFind := findRecipesFn
 	defer func() {
 		isTerminalFn = origIsTerm
 		runRecipePickerFn = origPicker
+		findRecipesFn = origFind
 	}()
 
 	isTerminalFn = func(f *os.File) bool { return true }
+	findRecipesFn = func(dirs ...string) ([]tui.RecipeItem, error) {
+		return []tui.RecipeItem{{Name: "dummy"}}, nil
+	}
 	runRecipePickerFn = func(dirs ...string) (string, error) {
 		return "", nil // simulated cancellation
 	}
 
-	cmd := applyCmd()
+	cmd := cookCmd()
 	cmd.SetArgs([]string{})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected nil error on cancelled picker, got: %v", err)
 	}
 }
 
-func TestApplyWithoutArgsInteractiveSelected(t *testing.T) {
+func TestCookWithoutArgsInteractiveSelected(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	origIsTerm := isTerminalFn
 	origPicker := runRecipePickerFn
+	origFind := findRecipesFn
 	defer func() {
 		isTerminalFn = origIsTerm
 		runRecipePickerFn = origPicker
+		findRecipesFn = origFind
 	}()
 
 	dir := t.TempDir()
@@ -199,19 +236,87 @@ func TestApplyWithoutArgsInteractiveSelected(t *testing.T) {
 	}
 
 	isTerminalFn = func(f *os.File) bool { return true }
+	findRecipesFn = func(dirs ...string) ([]tui.RecipeItem, error) {
+		return []tui.RecipeItem{{Name: "interactive-test", Path: recipe}}, nil
+	}
 	runRecipePickerFn = func(dirs ...string) (string, error) {
 		return recipe, nil
 	}
 
-	cmd := applyCmd()
+	cmd := cookCmd()
 	var out bytes.Buffer
 	cmd.SetOut(&out)
 	cmd.SetArgs([]string{"--dry-run", "--family", "debian"})
 	if err := cmd.Execute(); err != nil {
-		t.Fatalf("apply with picker failed: %v", err)
+		t.Fatalf("cook with picker failed: %v", err)
 	}
 	if !strings.Contains(out.String(), "interactive-test") || !strings.Contains(out.String(), "packages:install") {
 		t.Fatalf("unexpected plan output: %s", out.String())
 	}
 }
 
+func TestCookAutoDownloadsWhenRecipesMissing(t *testing.T) {
+	origIsTerm := isTerminalFn
+	origPicker := runRecipePickerFn
+	origFind := findRecipesFn
+	origGet := chefGetFn
+	defer func() {
+		isTerminalFn = origIsTerm
+		runRecipePickerFn = origPicker
+		findRecipesFn = origFind
+		chefGetFn = origGet
+	}()
+
+	getCalled := false
+	isTerminalFn = func(f *os.File) bool { return true }
+	findRecipesFn = func(dirs ...string) ([]tui.RecipeItem, error) {
+		return nil, nil // No recipes found initially
+	}
+	chefGetFn = func(repoURL, branch string) error {
+		getCalled = true
+		return nil
+	}
+	runRecipePickerFn = func(dirs ...string) (string, error) {
+		return "", nil
+	}
+
+	cmd := cookCmd()
+	cmd.SetArgs([]string{})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if !getCalled {
+		t.Fatal("expected chef.Get to be called automatically when no recipes are found")
+	}
+}
+
+func TestCookPullFlagTriggersDownload(t *testing.T) {
+	origIsTerm := isTerminalFn
+	origGet := chefGetFn
+	defer func() {
+		isTerminalFn = origIsTerm
+		chefGetFn = origGet
+	}()
+
+	isTerminalFn = func(f *os.File) bool { return false }
+	var gotURL, gotBranch string
+	getCalled := false
+	chefGetFn = func(repoURL, branch string) error {
+		getCalled = true
+		gotURL = repoURL
+		gotBranch = branch
+		return nil
+	}
+
+	cmd := cookCmd()
+	cmd.SetArgs([]string{"--pull", "--url", "https://example.com/chef.git", "--branch", "devel"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected nil error on non-interactive --pull, got: %v", err)
+	}
+	if !getCalled {
+		t.Fatal("expected chef.Get to be called when --pull is passed")
+	}
+	if gotURL != "https://example.com/chef.git" || gotBranch != "devel" {
+		t.Fatalf("unexpected url/branch passed to chef.Get: %q / %q", gotURL, gotBranch)
+	}
+}

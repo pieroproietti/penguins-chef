@@ -81,11 +81,6 @@ func DefaultRecipeDirs() []string {
 		}
 	}
 
-	// 3. Fallback to current directory if nothing else found
-	if len(dirs) == 0 {
-		dirs = append(dirs, ".")
-	}
-
 	return dirs
 }
 
@@ -94,6 +89,9 @@ func DefaultRecipeDirs() []string {
 func FindRecipes(dirs ...string) ([]RecipeItem, error) {
 	if len(dirs) == 0 {
 		dirs = DefaultRecipeDirs()
+		if len(dirs) == 0 {
+			return nil, nil
+		}
 	}
 
 	seen := make(map[string]bool)
@@ -157,7 +155,11 @@ func FindRecipes(dirs ...string) ([]RecipeItem, error) {
 				return nil
 			}
 
-			// Must look like a recipe (e.g. has name or version 1 or profiles or include)
+			// Must look like a recipe (has version, profiles, include, or sysroot)
+			if parsed.Version == 0 && len(parsed.Profiles) == 0 && len(parsed.Include) == 0 && parsed.Sysroot == "" {
+				return nil
+			}
+
 			recipeName := parsed.Name
 			if recipeName == "" {
 				recipeName = strings.TrimSuffix(info.Name(), ext)

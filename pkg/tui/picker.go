@@ -681,7 +681,7 @@ func Run(dirs ...string) (string, error) {
 	}
 
 	if len(recipes) == 0 {
-		return "", fmt.Errorf("no recipes found in ~/.chef or current directory (run 'chef get' to download recipes)")
+		return "", fmt.Errorf("no recipes found in ~/.chef or current directory (run 'chef cook --pull' to download recipes)")
 	}
 
 	m := NewModel(recipes)

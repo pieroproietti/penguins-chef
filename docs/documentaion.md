@@ -110,40 +110,40 @@ Before making any changes to the system, inspect the fully resolved execution pl
 ### Dry-Run on Current Host
 ```bash
 # Preview LightDM provisioning on the current host
-chef apply recipes/dm/lightdm.yaml --dry-run
+chef cook recipes/dm/lightdm.yaml --dry-run
 
 # Preview Colibri desktop provisioning on the current host
-chef apply recipes/costumes/colibri/colibri.yaml --dry-run
+chef cook recipes/costumes/colibri/colibri.yaml --dry-run
 ```
 
 ### Cross-Family Dry-Run Simulation
 Simulate how recipes resolve and apply across other distributions without requiring forced init parameters or matching environments:
 ```bash
 # Simulate for Arch Linux (automatically uses Arch's native systemd)
-chef apply recipes/dm/lightdm.yaml --dry-run --family archlinux
+chef cook recipes/dm/lightdm.yaml --dry-run --family archlinux
 
 # Simulate for Fedora (automatically uses Fedora's native systemd)
-chef apply recipes/dm/lightdm.yaml --dry-run --family fedora
+chef cook recipes/dm/lightdm.yaml --dry-run --family fedora
 
 # Simulate for openSUSE (automatically uses openSUSE's native systemd)
-chef apply recipes/dm/lightdm.yaml --dry-run --family opensuse
+chef cook recipes/dm/lightdm.yaml --dry-run --family opensuse
 
 # Simulate for Devuan (automatically uses Devuan's native sysvinit)
-chef apply recipes/dm/lightdm.yaml --dry-run --family devuan
+chef cook recipes/dm/lightdm.yaml --dry-run --family devuan
 ```
 
 > [!NOTE]
 > The `--init` parameter is not required. The engine automatically detects `systemd` or `sysvinit` on the real host, and selects the native init system for target distributions during cross-family simulations.
 
-### Applying a Recipe on a Real Host
+### Cooking a Recipe on a Real Host
 On a target machine, the package family and native init system (`systemd` or `sysvinit`) are automatically detected directly from the host:
 
 ```bash
-# Apply a specific display manager
-sudo chef apply recipes/dm/lightdm.yaml
+# Cook a specific display manager
+sudo chef cook recipes/dm/lightdm.yaml
 
-# Apply a complete custom costume
-sudo chef apply recipes/costumes/colibri/colibri.yaml
+# Cook a complete custom costume
+sudo chef cook recipes/costumes/colibri/colibri.yaml
 ```
 
 Re-running the apply command acts as an idempotent check: packages, files, and services are verified against the real system state without redundant operations.

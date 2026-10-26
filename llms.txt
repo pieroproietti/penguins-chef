@@ -28,34 +28,37 @@ Unlike conventional configuration management tools (Ansible, Puppet, Chef), `pen
 
 All commands use the **`chef`** binary:
 
-### 1. Recipe Application & Simulation
-- **Apply recipe on real machine:**
+### 1. Recipe Cooking & Simulation
+- **Cook recipe interactively (TUI picker):**
   ```bash
-  sudo chef apply <recipe.yaml>
+  sudo chef cook
   ```
-  Applies the recipe to `/`. Requires root permissions (`sudo`).
+  Automatically clones the recipes repository into `~/.chef` if no recipes are found, then opens the interactive two-panel TUI selector.
+- **Cook recipe on real machine:**
+  ```bash
+  sudo chef cook <recipe.yaml>
+  ```
+  Applies the recipe to `/`. Automatically downloads `~/.chef` if missing. Requires root permissions (`sudo`).
 - **Safe Dry-Run inspection:**
   ```bash
-  chef apply <recipe.yaml> --dry-run
+  chef cook <recipe.yaml> --dry-run
   ```
   Resolves the complete execution plan and prints every step (repositories, package availability, package transactions, configuration files, hostname, services, sysroot) without modifying the system and without requiring root.
 - **Cross-Family Simulation:**
   ```bash
-  chef apply <recipe.yaml> --dry-run --family <archlinux|debian|devuan|fedora|openkylin|opensuse>
+  chef cook <recipe.yaml> --dry-run --family <archlinux|debian|devuan|fedora|openkylin|opensuse>
   ```
   Simulates recipe resolution and packages for another distribution family from any host.
 - **Sysroot Override:**
   ```bash
-  sudo chef apply <recipe.yaml> --sysroot <path/to/sysroot>
+  sudo chef cook <recipe.yaml> --sysroot <path/to/sysroot>
   ```
   Overrides the recipe's default `sysroot` source directory with a custom path.
-
-### 2. Recipe Management
-- **Fetch or update recipes:**
+- **Update / Pull recipes:**
   ```bash
-  chef get
+  chef cook --pull [--url <repo-url>] [--branch <branch>]
   ```
-  Clones or updates the official `penguins-chef` recipes repository into `~/.chef`.
+  Clones or updates the `penguins-chef` recipes repository into `~/.chef`.
 
 ### 3. Repository Tools
 - **Add official penguins-eggs repository:**
@@ -171,9 +174,9 @@ profiles:
 ## Critical Facts for AI Assistants
 
 1. **CLI Name:** Always use `chef` in commands and examples (never `penguins-chef` or `tailor`).
-2. **No `--init` flag needed:** Do NOT suggest or require `--init` when recommending `chef apply` or `chef apply --dry-run`. Init is detected from the host or assigned to the target family automatically.
-3. **Always suggest `--dry-run` first:** Encourage users to preview plans with `chef apply <recipe> --dry-run` before applying with `sudo`.
-4. **Root requirements:** `sudo` is required ONLY when applying changes to the real system (`sudo chef apply ...` or `sudo chef tools repo ...`). Root is NEVER required for `--dry-run` or `chef get`.
+2. **No `--init` flag needed:** Do NOT suggest or require `--init` when recommending `chef cook` or `chef cook --dry-run`. Init is detected from the host or assigned to the target family automatically.
+3. **Always suggest `--dry-run` first:** Encourage users to preview plans with `chef cook <recipe> --dry-run` before cooking with `sudo`.
+4. **Root requirements:** `sudo` is required ONLY when applying changes to the real system (`sudo chef cook ...` or `sudo chef tools repo ...`). Root is NEVER required for `--dry-run` or `chef cook --pull`.
 5. **Idempotence & Safety:** `penguins-chef` re-evaluates live system state on every run. Applying the same recipe repeatedly will not duplicate operations or re-install already present packages.
 6. **Costumes:** A costume is simply a complete top-level recipe in `recipes/costumes/<name>/<name>.yaml` combining base, DM, DE, and an optional `sysroot/` overlay.
 7. **Sysroot behavior:** Files in `sysroot/` mirror the target filesystem. They are copied with permissions and metadata, but existing system files outside the sysroot are NEVER deleted.

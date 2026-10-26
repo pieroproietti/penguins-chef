@@ -41,33 +41,33 @@ recipes/
 
 ## 🚀 Quick Start Guide
 
-### 1. Fetch the recipes
-Before applying any configuration, download or update the recipe set:
+### 1. Cook interactively (or update recipes)
+Run `chef cook` without arguments to launch the interactive recipe picker. If `~/.chef` is missing, `chef` will download the recipes repository automatically. To force an update of the recipes repository:
 ```bash
-chef get
+chef cook --pull
 ```
 
 ### 2. Inspect with Dry-Run
 Before applying changes, safely preview the execution plan (no root required):
 ```bash
 # Preview on the current host
-chef apply recipes/dm/sddm.yaml --dry-run
+chef cook recipes/dm/sddm.yaml --dry-run
 
 # Simulate for another distribution (e.g. Arch Linux)
-chef apply recipes/dm/sddm.yaml --dry-run --family archlinux
+chef cook recipes/dm/sddm.yaml --dry-run --family archlinux
 ```
 
 ### 3. Install a Display Manager and Desktop Environment
-You can compose your graphical interface by first applying the login manager recipe and then your preferred desktop environment (for example on Arch Linux):
+You can compose your graphical interface by first cooking the login manager recipe and then your preferred desktop environment (for example on Arch Linux):
 ```bash
-sudo chef apply recipes/dm/sddm.yaml
-sudo chef apply recipes/de/gnome.yaml
+sudo chef cook recipes/dm/sddm.yaml
+sudo chef cook recipes/de/gnome.yaml
 ```
 
-### 4. Apply a Costume (Customization)
+### 4. Cook a Costume (Customization)
 Costumes define visual identity and user configuration files (wallpapers, dotfiles, etc.) via a mirrored `sysroot` structure:
 ```bash
-sudo chef apply recipes/costumes/colibri/colibri.yaml
+sudo chef cook recipes/costumes/colibri/colibri.yaml
 ```
 
 ---
