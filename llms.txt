@@ -88,7 +88,7 @@ The structure strictly mirrors **FreeDesktop** application categories:
 ```text
 recipes/
 ├── base/                   # Core system configuration and essential utilities
-├── de/                     # Desktop Environments (plasma, xfce4, gnome, mate, cinnamon, lxqt, ukui, dde)
+├── de/                     # Desktop Environments (plasma, xfce4, gnome, mate, cinnamon, lxqt)
 ├── dm/                     # Display Managers (lightdm, gdm, sddm)
 ├── costumes/               # Full desktop configurations (colibri, albatros, duck, eagle, sparrow, swallow)
 │   ├── colibri/

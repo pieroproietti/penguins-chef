@@ -1,5 +1,20 @@
 # Changelog
 
+## Release Notes: penguins-chef v26.10.30 - 2026-10-30
+This release streamlines recipe management and execution by consolidating `chef apply` and `chef get` into a single, intuitive `chef cook` command featuring automatic recipe downloads, repository synchronization with `--pull`, robust path resolution across standard recipe locations, and official project branding.
+
+### 🍳 Unified `chef cook` Command
+* **Consolidated Workflow**: Merged recipe acquisition (`chef get`) and recipe application (`chef apply`) into the unified `chef cook` command.
+* **Automatic Recipe Provisioning**: If `~/.chef` or recipes are missing, running `chef cook` automatically clones the recipe repository in the background before launching the interactive TUI selector or resolving the requested recipe.
+* **Synchronize with `--pull`**: Introduced `--pull` (`-p`) flag to fetch and pull updates for recipes in `~/.chef` prior to execution.
+* **Custom Remote Repositories**: Added `--url` (`-u`) and `--branch` (`-b`) options to synchronize or cook directly from custom remote recipe repositories.
+* **Enhanced Path Resolution**: Intelligently resolves recipe names and paths across `~/.chef`, `~/.chef/recipes`, `recipes/`, and `CHEF_RECIPES_DIR`, allowing short recipe names without requiring explicit paths or `.yaml` extensions.
+* **Non-Interactive Gracefulness**: Streamlined non-interactive behavior when executed in pipelines or non-TTY environments.
+
+### 🎨 Visual Identity & Documentation
+* **Project Banner**: Integrated official `penguins-chef.png` banner artwork.
+* **Documentation & LLM Standards**: Updated `README.md`, command documentation, manpage generators, and `llms.txt` to reflect the new `cook` CLI command interface.
+
 ## Release Notes: penguins-chef v26.10.14 - 2026-10-14
 This release introduces full support for OpenKylin Linux, implements an interactive dual-panel TUI interface for `chef apply`, adds robust non-systemd and Devuan support with automatic init detection, adds AI assistant context (`llms.txt`), and reorganizes recipes into modular `dm` and `de` structures.
 
