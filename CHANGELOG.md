@@ -1,5 +1,11 @@
 # Changelog
 
+## Release Notes: penguins-chef v26.10.31-1 - 2026-10-31
+This release introduces a dedicated system recipe for Penguins' Eggs across all supported Linux distributions.
+
+### 🐧 Penguins' Eggs System Recipe
+* **Penguins' Eggs Recipe**: Added `recipes/system/penguins-eggs.yaml` for automated installation of the Penguins' Eggs live remastering CLI tool across Debian, Arch Linux, Fedora, and openSUSE.
+
 ## Release Notes: penguins-chef v26.10.31 - 2026-10-31
 This release introduces native repository configuration support for DNF (Fedora) and Zypper (openSUSE), enhances third-party repository integrations such as Visual Studio Code, and adds the Calamares graphical system installer recipe with full QML slideshow support across all supported distribution families.
 
