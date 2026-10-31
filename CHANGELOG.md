@@ -1,5 +1,18 @@
 # Changelog
 
+## Release Notes: penguins-chef v26.10.31 - 2026-10-31
+This release introduces native repository configuration support for DNF (Fedora) and Zypper (openSUSE), enhances third-party repository integrations such as Visual Studio Code, and adds the Calamares graphical system installer recipe with full QML slideshow support across all supported distribution families.
+
+### 📦 DNF & Zypper Repository Support
+* **DNF Repositories**: Implemented validation and deployment of `.repo` configuration files within `/etc/yum.repos.d/`.
+* **Zypper Repositories**: Implemented validation and deployment of `.repo` configuration files within `/etc/zypp/repos.d/`.
+* **Automatic GPG Key Import**: Added `--gpg-auto-import-keys` during Zypper repository refresh to ensure seamless non-interactive key importing.
+* **VS Code Multi-Distro Support**: Enhanced `recipes/development/vscode.yaml` with official repository configurations for Fedora and openSUSE alongside existing Debian and Arch Linux profiles.
+
+### 💿 Calamares System Installer Recipe
+* **Calamares Installer**: Added `recipes/system/calamares.yaml` supporting automated installation of Calamares across Debian, Arch Linux, Fedora, and openSUSE.
+* **QML Slideshow Dependencies**: Included essential QML modules (`qtquick2`, `qtquick-controls`, `qtquick-controls2`, `qtquick-layouts`, `qtgraphicaleffects`) tailored to each distribution family for interactive installer slideshows.
+
 ## Release Notes: penguins-chef v26.10.30 - 2026-10-30
 This release streamlines recipe management and execution by consolidating `chef apply` and `chef get` into a single, intuitive `chef cook` command featuring automatic recipe downloads, repository synchronization with `--pull`, robust path resolution across standard recipe locations, and official project branding.
 
