@@ -1,0 +1,32 @@
+version: 1
+name: calamares
+description: Calamares graphical system installer and QML slideshow libraries
+
+profiles:
+  debian:
+    packages:
+      - calamares
+      - qml-module-qtquick2
+      - qml-module-qtquick-controls
+      - qml-module-qtquick-controls2
+      - qml-module-qtquick-layouts
+      - qml-module-qtgraphicaleffects
+
+  archlinux:
+    packages:
+      - calamares
+      - qt5-graphicaleffects
+
+  fedora:
+    packages:
+      - calamares
+      - qt5-qtgraphicaleffects
+      - qt5-qtquickcontrols
+      - qt5-qtquickcontrols2
+
+  opensuse:
+    packages:
+      - calamares
+      - libqt5-qtgraphicaleffects
+      - libqt5-qtquickcontrols
+      - libqt5-qtquickcontrols2
