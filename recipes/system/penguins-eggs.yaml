@@ -1,0 +1,20 @@
+version: 1
+name: penguins-eggs
+description: Penguins' Eggs live remastering CLI tool
+
+profiles:
+  debian:
+    packages:
+      - penguins-eggs
+
+  archlinux:
+    packages:
+      - penguins-eggs
+
+  fedora:
+    packages:
+      - penguins-eggs
+
+  opensuse:
+    packages:
+      - penguins-eggs
