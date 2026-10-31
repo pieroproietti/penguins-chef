@@ -109,13 +109,16 @@ func (dnfBackend) install(pkgs []string) []string {
 	return append([]string{"dnf", "install", "-y"}, pkgs...)
 }
 func (dnfBackend) validateRepository(f File) error {
-	return fmt.Errorf("adding DNF repositories is not implemented: %q", f.Path)
+	if !strings.HasPrefix(f.Path, "/etc/yum.repos.d/") || strings.Contains(strings.TrimPrefix(f.Path, "/etc/yum.repos.d/"), "/") || !strings.HasSuffix(f.Path, ".repo") {
+		return fmt.Errorf("unsupported DNF repository file %q", f.Path)
+	}
+	return nil
 }
 
 type zypperBackend struct{}
 
 func (zypperBackend) prepare() []string {
-	return []string{"zypper", "--non-interactive", "refresh"}
+	return []string{"zypper", "--non-interactive", "--gpg-auto-import-keys", "refresh"}
 }
 func (zypperBackend) availability(pkg string) []string {
 	return []string{"zypper", "--non-interactive", "--xmlout", "--no-refresh", "search", "--match-exact", "--case-sensitive", "--details", "--type", "package", pkg}
@@ -145,7 +148,10 @@ func (zypperBackend) install(pkgs []string) []string {
 	return append([]string{"zypper", "--non-interactive", "install"}, pkgs...)
 }
 func (zypperBackend) validateRepository(f File) error {
-	return fmt.Errorf("adding Zypper repositories is not implemented: %q", f.Path)
+	if !strings.HasPrefix(f.Path, "/etc/zypp/repos.d/") || strings.Contains(strings.TrimPrefix(f.Path, "/etc/zypp/repos.d/"), "/") || !strings.HasSuffix(f.Path, ".repo") {
+		return fmt.Errorf("unsupported Zypper repository file %q", f.Path)
+	}
+	return nil
 }
 
 type initBackend interface {

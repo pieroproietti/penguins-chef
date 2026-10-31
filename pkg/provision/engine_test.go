@@ -171,7 +171,7 @@ func TestExecutionOrderAndResume(t *testing.T) {
 				install = "dnf install -y lightdm greeter"
 			}
 			if family == "opensuse" {
-				prepare = "zypper --non-interactive refresh"
+				prepare = "zypper --non-interactive --gpg-auto-import-keys refresh"
 				install = "zypper --non-interactive install lightdm greeter"
 			}
 			if r.events[0] != prepare {
@@ -354,7 +354,8 @@ func TestBuildRejectsInvalidProfiles(t *testing.T) {
 		{"relative", "debian", "systemd", Profile{Files: []File{{Path: "etc/config"}}}},
 		{"duplicate", "debian", "systemd", Profile{Files: []File{{Path: "/etc/config"}, {Path: "/etc/config"}}}},
 		{"parent-file", "debian", "systemd", Profile{Files: []File{{Path: "/etc/config"}, {Path: "/etc/config/child"}}}},
-		{"dnf-repository", "fedora", "systemd", Profile{Repositories: []File{{Path: "/etc/yum.repos.d/test.repo"}}}},
+		{"dnf-repository", "fedora", "systemd", Profile{Repositories: []File{{Path: "/etc/yum.repos.d/test.list"}}}},
+		{"zypper-repository", "opensuse", "systemd", Profile{Repositories: []File{{Path: "/etc/zypp/repos.d/test.list"}}}},
 		{"repository", "archlinux", "systemd", Profile{Repositories: []File{{Path: "/etc/pacman.conf"}}}},
 	}
 	for _, tc := range cases {
@@ -713,8 +714,11 @@ func TestZypperAvailabilityRequiresRepositoryPackage(t *testing.T) {
 	if err := backend.validateAvailability(`<?xml version="1.0"?><stream><message type="info">Loading repositories</message><search-result><solvable-list><solvable kind="package" name="lightdm" repository="repo-oss"/></solvable-list></search-result></stream>`); err != nil {
 		t.Fatal(err)
 	}
-	if err := backend.validateRepository(File{Path: "/etc/zypp/repos.d/test.repo"}); err == nil {
+	if err := backend.validateRepository(File{Path: "/etc/zypp/repos.d/test.list"}); err == nil {
 		t.Fatal("accepted unsupported repository mutation")
+	}
+	if err := backend.validateRepository(File{Path: "/etc/zypp/repos.d/vscode.repo"}); err != nil {
+		t.Fatalf("rejected valid zypper repository: %v", err)
 	}
 }
 
@@ -1385,6 +1389,7 @@ func TestAppRecipesBuild(t *testing.T) {
 		"../../recipes/graphics/gimp.yaml",
 		"../../recipes/office/libreoffice.yaml",
 		"../../recipes/multimedia/vlc.yaml",
+		"../../recipes/development/vscode.yaml",
 	} {
 		f, err := os.Open(appPath)
 		if err != nil {
